@@ -1,4 +1,4 @@
-// Fallback data when Contentful credentials are not provided or API request fails
+// Fallback data for Notion blog when integration credentials are not configured or during previews
 
 export const MOCK_CATEGORIES = [
   {
@@ -45,75 +45,6 @@ export const MOCK_CATEGORIES = [
   },
 ];
 
-const createRichTextDoc = (paragraphs, heading, quote) => ({
-  nodeType: "document",
-  data: {},
-  content: [
-    {
-      nodeType: "paragraph",
-      data: {},
-      content: [
-        {
-          nodeType: "text",
-          value: paragraphs[0] || "",
-          marks: [],
-          data: {},
-        },
-      ],
-    },
-    ...(heading
-      ? [
-          {
-            nodeType: "heading-2",
-            data: {},
-            content: [
-              {
-                nodeType: "text",
-                value: heading,
-                marks: [],
-                data: {},
-              },
-            ],
-          },
-        ]
-      : []),
-    ...(quote
-      ? [
-          {
-            nodeType: "quote",
-            data: {},
-            content: [
-              {
-                nodeType: "paragraph",
-                data: {},
-                content: [
-                  {
-                    nodeType: "text",
-                    value: quote,
-                    marks: [],
-                    data: {},
-                  },
-                ],
-              },
-            ],
-          },
-        ]
-      : []),
-    ...(paragraphs.slice(1).map((p) => ({
-      nodeType: "paragraph",
-      data: {},
-      content: [
-        {
-          nodeType: "text",
-          value: p,
-          marks: [],
-          data: {},
-        },
-      ],
-    }))),
-  ],
-});
-
 export const MOCK_ARTICLES = [
   {
     sys: { id: "post-1", createdAt: "2026-03-10T09:00:00.000Z" },
@@ -136,15 +67,28 @@ export const MOCK_ARTICLES = [
           slug: "korean",
         },
       },
-      content: createRichTextDoc(
-        [
-          "When starting your journey in learning Korean, one of the most critical foundational concepts is understanding how speech levels reflect social hierarchy, closeness, and respect.",
-          "Jondaetmal (존댓말) is the formal and polite speech register used when speaking to elders, strangers, colleagues, and customers. In contrast, banmal (반말) is reserved strictly for very close friends of the exact same age or younger family members.",
-          "A common mistake among beginners is switching to banmal too early because of closeness felt through friendship. In Korean social etiquette, asking '우리 말 놓을까요?' (Shall we drop formal speech?) is a respectful transition that strengthens mutual bonds."
-        ],
-        "Why Nuance Matters in Daily Interactions",
-        "Language in Korea is deeply intertwined with social awareness (눈치 - nunchi). Choosing the right honorific ending conveys empathy and attentiveness."
-      ),
+      content: `When starting your journey in learning Korean, one of the most critical foundational concepts is understanding how speech levels reflect social hierarchy, closeness, and respect.
+
+Jondaetmal (존댓말) is the formal and polite speech register used when speaking to elders, strangers, colleagues, and customers. In contrast, banmal (반말) is reserved strictly for very close friends of the exact same age or younger family members.
+
+## Why Nuance Matters in Daily Interactions
+
+Language in Korea is deeply intertwined with social awareness (눈치 - *nunchi*). Choosing the right honorific ending conveys empathy and attentiveness:
+
+- **합쇼체 (Hasipsyo-che):** Formal, courteous endings such as ~습니다 / ~습니까, commonly heard in news broadcasting, official business announcements, and military speeches.
+- **해요체 (Haeyo-che):** Polite, conversational endings (~아/어요), universally loved in polite everyday banter with acquaintances, store clerks, and colleagues.
+- **해체 (Hae-che):** Casual banmal with no polite markers (~아/어), used among bosom friends.
+
+> "To learn a language is to have one more window from which to look at the world. In Korean, honorifics open a window directly into communal respect."
+
+A common mistake among beginners is switching to banmal too early because of mutual warmth felt through friendship. In Korean social etiquette, asking:
+
+\`\`\`korean
+우리 말 놓을까요?
+(Shall we speak comfortably / drop formal speech?)
+\`\`\`
+
+is a respectful rite of passage that cements genuine companionship.`,
     },
   },
   {
@@ -168,15 +112,19 @@ export const MOCK_ARTICLES = [
           slug: "apateu",
         },
       },
-      content: createRichTextDoc(
-        [
-          "From Seoul to Busan, towering apartment complexes dominate the skyline. In Korean, the word '아파트' (Apateu) represents far more than just residential units—it is the epicentre of modern family life and urban convenience.",
-          "Equipped with heated ondol flooring, smart home automation, security gates, and self-contained community facilities (kindergartens, fitness centers, and study cafes), modern complexes provide unparalleled convenience.",
-          "Understanding the Apateu phenomenon offers a deep window into Korea's rapid economic development and contemporary community dynamics."
-        ],
-        "The Cultural Meaning Behind the Towers",
-        "For generations of Koreans, moving into a newly constructed complex symbolized stability, progress, and educational opportunity for their children."
-      ),
+      content: `From Seoul to Busan, towering apartment complexes dominate the skyline. In Korean, the word **'아파트' (Apateu)** represents far more than just residential concrete units—it is the epicenter of modern family life, educational mobility, and urban design.
+
+Equipped with heated *ondol* (온돌) floor warming systems, centralized recycling centers, contactless keycards, and self-contained community facilities (kindergartens, gyms, study libraries, and senior lounges), modern *danji* (단지 - complexes) provide unparalleled daily convenience.
+
+## The Cultural Meaning Behind the Towers
+
+For generations of Koreans, moving into a newly constructed apartment complex symbolized stability, economic progress, and secure futures for their children:
+
+- **Safety & Community:** Enclosed vehicle-free pedestrian walkways where young children play safely.
+- **Smart Tech Integration:** Automated elevator calls from wall pads, smartphone home control, and real-time package delivery lockers.
+- **Underfloor Heating:** The continuation of ancient thousand-year ondol stone hearth warmth in 30-floor modern sky homes.
+
+> "Apateu is not just an architectural format; it is South Korea's social canvas for community and urban efficiency."`,
     },
   },
   {
@@ -200,15 +148,18 @@ export const MOCK_ARTICLES = [
           slug: "chaebol",
         },
       },
-      content: createRichTextDoc(
-        [
-          "The term Chaebol (재벌) refers to large, family-controlled corporate conglomerates that spearheaded South Korea's post-war 'Miracle on the Han River'.",
-          "From electronics and semiconductors to automotive manufacturing and entertainment, household names like Samsung, Hyundai, LG, and SK have driven economic vitality across the globe.",
-          "Today, these conglomerates balance traditional family leadership with global corporate governance, fostering world-class technology while shaping modern business culture."
-        ],
-        "Tradition Meets Innovation",
-        "The story of chaebols is tightly interwoven with Korea's national resilience, industrial discipline, and technological ambition."
-      ),
+      content: `The term **Chaebol (재벌)** refers to large, family-controlled corporate conglomerates that spearheaded South Korea's post-war rapid transformation—widely celebrated as the *'Miracle on the Han River'*.
+
+From microchips and OLED displays to automotive design, shipbuilding, and global entertainment, household conglomerates like Samsung, Hyundai, LG, and SK have defined national economic power.
+
+## Tradition Meets Innovation
+
+The story of chaebols is tightly interwoven with Korea's national resilience, industrial discipline, and technological ambition:
+
+- **Speed & Decisive Investment:** Concentrated family ownership enabled multi-billion dollar early commitments into semiconductor foundries and EV batteries years before competitors.
+- **Global Brand Evolution:** Transitioning from OEM commodity manufacturing in the 1970s to world-defining luxury electronics, automobiles, and cultural export powerhouses.
+
+> "Understanding Korea's economic development requires looking into the unique ecosystem where government policy, industrial ambition, and entrepreneurial resilience converged."`,
     },
   },
   {
@@ -232,15 +183,16 @@ export const MOCK_ARTICLES = [
           slug: "korea",
         },
       },
-      content: createRichTextDoc(
-        [
-          "Walking down any street in Yeonnam-dong or Seongsu-dong, you will encounter coffee shops that double as architectural exhibitions. In Korea, cafes represent the quintessential 'third place'.",
-          "With lightning-fast Wi-Fi, power outlets at every seat, and curated playlists, cafes are where students study, remote workers design, and friends unwind over signature iced Americanos.",
-          "Even in the depths of winter, the phrase 'Eol-juk-ah' (얼죽아 - freezing to death, but still iced Americano) illustrates the enduring love Koreans harbor for their chilled brews."
-        ],
-        "The Aesthetic Third Place",
-        "A cafe in Korea is never just about coffee; it is a canvas of light, music, and peaceful focus."
-      ),
+      content: `Walking through the trendy backstreets of Yeonnam-dong, Seongsu-dong, or Euljiro, you will encounter hundreds of coffee shops that double as architectural exhibitions. In Korea, cafes represent the quintessential *'third place'*.
+
+With ultra-fast Wi-Fi, discreet power outlets at nearly every seat, and curated ambient playlists, cafes are where students study, remote workers code, and friends unwind over signature iced Americanos.
+
+## The Aesthetic Third Place
+
+- **얼죽아 (Eol-juk-ah):** The famous Korean slang abbreviation for *"freezing to death, but still drinking iced Americano!"* Even in mid-January snowstorms, chilled iced coffees dominate orders.
+- **Architectural Curations:** Brutalist concrete restorations, renovated traditional hanoks, and minimalist glass pavilions create spaces where design enthusiasts feel immediately inspired.
+
+> "A cafe in Korea is never just about coffee; it is a serene sanctuary of light, music, and quiet focus."`,
     },
   },
   {
@@ -264,15 +216,25 @@ export const MOCK_ARTICLES = [
           slug: "japanese",
         },
       },
-      content: createRichTextDoc(
-        [
-          "Learners studying both Korean and Japanese frequently remark on how intimately similar their syntactic skeletons feel. Both languages belong to the agglutinative typology and follow a Subject-Object-Verb (SOV) order.",
-          "Particles in Korean like 은/는 (topic marker), 이/가 (subject marker), and 을/를 (object marker) align seamlessly with Japanese は (wa), が (ga), and を (o).",
-          "Furthermore, thousands of Sino-Korean (한자어) and Sino-Japanese (漢語) roots are nearly homophonous, allowing multilingual learners to rapidly compound their vocabulary retention."
-        ],
-        "A Bridge Between East Asian Languages",
-        "Mastering one language provides an exceptional springboard and intuitive mental model for acquiring the other."
-      ),
+      content: `Learners studying both Korean and Japanese frequently remark on how intimately similar their syntactic skeletons feel. Both languages belong to an agglutinative typological framework and adhere strictly to a **Subject-Object-Verb (SOV)** word order.
+
+## Syntactic Twins: Particles
+
+Particles in Korean align seamlessly with Japanese grammatical equivalents:
+
+- **Topic Markers:** Korean 은/는 (*eun/neun*) corresponds directly to Japanese は (*wa*).
+- **Subject Markers:** Korean 이/가 (*i/ga*) mirrors Japanese が (*ga*).
+- **Object Markers:** Korean 을/를 (*eul/reul*) corresponds to Japanese を (*o*).
+
+## Shared Sino Vocabulary Roots
+
+Thousands of Sino-Korean (**한자어**) and Sino-Japanese (**漢語**) cognates sound almost identical:
+
+- **Promise:** 약속 (*yaksok*) ↔ 約束 (*yakusoku*)
+- **Preparation:** 준비 (*junbi*) ↔ 準備 (*junbi*)
+- **Simple:** 간단 (*gandan*) ↔ 簡単 (*kantan*)
+
+> "Mastering one language provides an exceptional springboard and intuitive mental model for acquiring the other."`,
     },
   },
   {
@@ -296,15 +258,17 @@ export const MOCK_ARTICLES = [
           slug: "content",
         },
       },
-      content: createRichTextDoc(
-        [
-          "Consistency triumphs over intensity when acquiring a new language. Designing a study regimen that sparks curiosity will sustain your momentum through intermediate plateaus.",
-          "Pairing Anki spaced repetition decks with authentic native content—such as webtoons, variety shows, and short essay collections—anchors abstract grammar rules into memorable contexts.",
-          "Keep an active digital journal: try writing 3 sentences every evening summarizing your day in simple Korean. Within months, fluid expression will become second nature."
-        ],
-        "Sustainable Daily Habits",
-        "Small, mindful micro-sessions of 15 minutes each day yield far greater fluency than sporadic weekend marathons."
-      ),
+      content: `Consistency triumphs over intensity when acquiring any language. Designing a study regimen that sparks genuine curiosity will sustain your momentum through intermediate plateaus.
+
+Pairing Anki spaced repetition decks with authentic native content—such as webtoons, variety shows, and short essay collections—anchors abstract grammar rules into memorable, living contexts.
+
+## Three Pillars of Sustainable Fluency
+
+1. **Active Spaced Repetition:** 10 minutes of daily flashcards reviewing high-frequency verb conjugations.
+2. **Contextual Comprehensible Input:** Shadowing dialogs from slice-of-life dramas with dual Korean-English subtitles.
+3. **Daily Micro-Journaling:** Writing just three concise sentences every evening summarizing your day in simple Korean.
+
+> "Small, mindful micro-sessions of 15 minutes each day yield far greater fluency than sporadic weekend marathons."`,
     },
   },
 ];

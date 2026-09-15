@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 // ============================================================
 // POST CARD — Editorial layout card.
@@ -10,6 +10,8 @@ import { Link } from "react-router-dom";
 const BADGE_VARIANTS = ["badge-mint", "badge-blush", "badge-neutral"];
 
 export default function PostCard({ article, index = 0, theme = {} }) {
+  const navigate = useNavigate();
+
   // ── Original data extraction — UNCHANGED ──
   const { title, slug, excerpt, coverImage, tags } = article.fields;
 
@@ -35,22 +37,37 @@ export default function PostCard({ article, index = 0, theme = {} }) {
     ? `/${categorySlug}/${slug}`
     : `/post/${slug}`;
 
+  const handleCardClick = (e) => {
+    // Prevent overriding if user explicitly clicked an interactive element (link/button)
+    if (e.target.closest("a, button")) {
+      return;
+    }
+    navigate(articleUrl);
+  };
+
   return (
-    <Link to={articleUrl} className="group flex flex-col cursor-pointer h-full">
+    <article
+      onClick={handleCardClick}
+      className="group flex flex-col cursor-pointer h-full"
+    >
       {/* ── Cover image ── */}
       {imageUrl && (
-        <div className="card-img-wrapper aspect-[4/3] rounded-2xl bg-ink-100 mb-5 shadow-card overflow-hidden">
+        <Link
+          to={articleUrl}
+          className="card-img-wrapper block aspect-[4/3] rounded-2xl bg-ink-100 mb-5 shadow-card overflow-hidden"
+          aria-label={title}
+        >
           <img
             src={imageUrl}
             alt={title}
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-700 ease-smooth group-hover:scale-103"
           />
-        </div>
+        </Link>
       )}
 
       {/* ── Category badge ── */}
-     <div className="mb-3">
+      <div className="mb-3">
         {categorySlug ? (
           <Link
             to={`/category/${categorySlug}`}
@@ -89,16 +106,18 @@ export default function PostCard({ article, index = 0, theme = {} }) {
       </div>
 
       {/* ── Title (serif) ── */}
-      <h2
-        className="font-['MomoSignature'] text-[18px] md:text-[24px] font-bold leading-snug mb-3 transition-colors duration-300"
-        style={{ color: theme.cardTitleColor || "#9370db" }}
-      >
-        {title}
-      </h2>
+      <Link to={articleUrl} className="block mb-3">
+        <h2
+          className="font-['MomoSignature'] text-[18px] md:text-[24px] font-bold leading-snug transition-colors duration-300 group-hover:text-mint-700"
+          style={{ color: theme.cardTitleColor || "#9370db" }}
+        >
+          {title}
+        </h2>
+      </Link>
 
       {/* ── Excerpt ── */}
       <p
-        className="font-['Angel'] text-[12px] md:text-[14px]"
+        className="font-['Angel'] text-[12px] md:text-[14px] mb-4"
         style={{ color: theme.cardExcerptColor || "#191970" }}
       >
         {excerpt}
@@ -106,21 +125,27 @@ export default function PostCard({ article, index = 0, theme = {} }) {
 
       {/* ── Read more ── */}
       <div className="mt-auto flex items-center gap-2 text-[0.8125rem] font-semibold text-ink-900">
-        <span className="underline-grow">Read Article</span>
-        <svg
-          className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform duration-300"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+        <Link
+          to={articleUrl}
+          className="inline-flex items-center gap-2 text-ink-900 hover:text-mint-700 transition-colors"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M14 5l7 7m0 0l-7 7m7-7H3"
-          />
-        </svg>
+          <span className="underline-grow">Read Article</span>
+          <svg
+            className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform duration-300"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M14 5l7 7m0 0l-7 7m7-7H3"
+            />
+          </svg>
+        </Link>
       </div>
-    </Link>
+    </article>
   );
 }
+

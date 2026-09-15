@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getArticles } from "../services/contentful";
+import { getArticles } from "../services/notion";
 import Navbar from "../components/Navbar";
 import PostCard from "../components/PostCard";
 

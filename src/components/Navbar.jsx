@@ -1,7 +1,7 @@
 // src/components/Navbar.jsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getCategories } from "../services/contentful";
+import { getCategories } from "../services/notion";
 
 export default function Navbar({ theme = {} }) {
   const [isOpen, setIsOpen] = useState(false);

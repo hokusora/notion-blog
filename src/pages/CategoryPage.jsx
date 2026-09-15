@@ -1,7 +1,7 @@
 // src/pages/CategoryPage.jsx
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getArticlesByCategory } from "../services/contentful";
+import { getArticlesByCategory } from "../services/notion";
 import Navbar from "../components/Navbar";
 import PostCard from "../components/PostCard";
 

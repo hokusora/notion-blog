@@ -4,21 +4,27 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "vite build",
+    "dev": "tsx server.ts",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "start": "node dist/server.cjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@contentful/rich-text-react-renderer": "^16.2.1",
-    "@contentful/rich-text-types": "^17.0.4",
-    "contentful": "^11.12.5",
+    "@notionhq/client": "^5.26.0",
+    "esbuild": "^0.28.2",
+    "express": "^5.2.1",
+    "notion-to-md": "^3.1.9",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-router-dom": "^7.18.0"
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^7.18.0",
+    "tsx": "^4.23.13"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.5.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",

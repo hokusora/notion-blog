@@ -1,65 +1,120 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { documentToReactComponents } from "@contentful/rich-text-react-renderer";
-import { BLOCKS, INLINES } from "@contentful/rich-text-types";
-import { getArticleBySlug } from "../services/contentful";
+import Markdown from "react-markdown";
+import { getArticleBySlug } from "../services/notion";
 
-// ── Rich text render options — UNCHANGED ──
-const renderOptions = {
-  renderNode: {
-    // Paragraph
-    [BLOCKS.PARAGRAPH]: (node, children) => (
-      <p className="mb-6 leading-[1.85] text-[2.5rem] text-[#d98079] font-['Angel']">
-        {/* đã đổi màu hex #d98079 và thêm font Angel */}
-        {children}
-      </p>
-    ),
-    [BLOCKS.HEADING_2]: (node, children) => (
-      <h2
-        className="font-serif text-[1.75rem] font-bold text-ink-900
-                   mt-14 mb-5 leading-tight tracking-tight"
-      >
-        {children}
-      </h2>
-    ),
-    [BLOCKS.HEADING_3]: (node, children) => (
-      <h3
-        className="font-serif text-[1.35rem] font-bold text-ink-900
-                   mt-10 mb-4 leading-snug"
-      >
-        {children}
-      </h3>
-    ),
-    [BLOCKS.QUOTE]: (node, children) => (
-      <blockquote
-        className="border-l-2 border-mint-400 pl-6 py-3 my-10
-                             bg-mint-50 rounded-r-xl text-ink-700 italic
-                             text-lg leading-relaxed"
-      >
-        {children}
-      </blockquote>
-    ),
-    [INLINES.HYPERLINK]: (node, children) => (
-      <a
-        href={node.data.uri}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-mint-600 underline underline-offset-2 decoration-mint-300
-                   hover:text-mint-700 hover:decoration-mint-500 transition-colors"
-      >
-        {children}
-      </a>
-    ),
-    [BLOCKS.EMBEDDED_ASSET]: (node) => {
-      const { url, title } = node.data.target.fields.file;
+// ── Markdown render options styled with editorial Korean aesthetic ──
+const markdownComponents = {
+  h1: ({ children, ...props }) => (
+    <h1
+      className="font-serif text-[2rem] md:text-[2.25rem] font-bold text-ink-900
+                 mt-12 mb-6 tracking-tight leading-tight"
+      {...props}
+    >
+      {children}
+    </h1>
+  ),
+  h2: ({ children, ...props }) => (
+    <h2
+      className="font-serif text-[1.75rem] font-bold text-ink-900
+                 mt-14 mb-5 leading-tight tracking-tight"
+      {...props}
+    >
+      {children}
+    </h2>
+  ),
+  h3: ({ children, ...props }) => (
+    <h3
+      className="font-serif text-[1.35rem] font-bold text-ink-900
+                 mt-10 mb-4 leading-snug"
+      {...props}
+    >
+      {children}
+    </h3>
+  ),
+  p: ({ children, ...props }) => (
+    <p
+      className="mb-6 leading-[1.85] text-[1.25rem] text-[#d98079] font-['Angel']"
+      {...props}
+    >
+      {children}
+    </p>
+  ),
+  blockquote: ({ children, ...props }) => (
+    <blockquote
+      className="border-l-4 border-mint-400 pl-6 py-4 my-8
+                 bg-mint-50 rounded-r-xl text-ink-800 italic
+                 text-lg leading-relaxed shadow-sm"
+      {...props}
+    >
+      {children}
+    </blockquote>
+  ),
+  a: ({ children, href, ...props }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-mint-600 underline underline-offset-2 decoration-mint-300
+                 hover:text-mint-700 hover:decoration-mint-500 transition-colors"
+      {...props}
+    >
+      {children}
+    </a>
+  ),
+  img: ({ src, alt, ...props }) => (
+    <img
+      src={src}
+      alt={alt || "Article illustration"}
+      loading="lazy"
+      className="rounded-2xl my-10 w-full shadow-card object-cover"
+      {...props}
+    />
+  ),
+  ul: ({ children, ...props }) => (
+    <ul className="list-none pl-0 mb-6 space-y-3" {...props}>
+      {children}
+    </ul>
+  ),
+  ol: ({ children, ...props }) => (
+    <ol
+      className="list-decimal pl-6 mb-6 space-y-3 text-ink-700 font-['Angel'] text-[1.25rem]"
+      {...props}
+    >
+      {children}
+    </ol>
+  ),
+  li: ({ children, ...props }) => (
+    <li
+      className="pl-6 relative text-ink-700 font-['Angel'] text-[1.25rem] leading-relaxed before:content-['—'] before:absolute before:left-0 before:text-mint-500 before:font-bold"
+      {...props}
+    >
+      {children}
+    </li>
+  ),
+  hr: () => <hr className="border-0 border-t border-ink-300/40 my-10" />,
+  code: ({ inline, className, children, ...props }) => {
+    if (inline) {
       return (
-        <img
-          src={`https:${url}`}
-          alt={title || "Embedded content"}
-          className="rounded-2xl my-10 w-full shadow-card"
-        />
+        <code
+          className="bg-ink-100 text-ink-900 px-1.5 py-0.5 rounded text-[0.9em] font-mono font-medium"
+          {...props}
+        >
+          {children}
+        </code>
       );
-    },
+    }
+    const lang = className?.replace("language-", "") || "code";
+    return (
+      <div className="my-8 rounded-xl overflow-hidden shadow-card border border-ink-300/30">
+        <div className="bg-ink-800 px-4 py-2 flex items-center justify-between text-xs text-ink-300 font-mono border-b border-ink-700">
+          <span>{lang}</span>
+        </div>
+        <pre className="bg-ink-900 text-cream p-5 overflow-x-auto text-sm font-mono leading-relaxed">
+          <code {...props}>{children}</code>
+        </pre>
+      </div>
+    );
   },
 };
 
@@ -292,9 +347,11 @@ const ArticleDetail = () => {
 
       {article.fields.s3Url && <S3MediaViewer url={article.fields.s3Url} />}
 
-      {/* ── Rich text body — UNCHANGED ── */}
+      {/* ── Rich text body via React Markdown ── */}
       <div className="article-body">
-        {documentToReactComponents(content, renderOptions)}
+        <Markdown components={markdownComponents}>
+          {typeof content === "string" ? content : ""}
+        </Markdown>
       </div>
 
       {/* ── End of article — back về category ── */}
