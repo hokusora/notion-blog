@@ -1,0 +1,175 @@
+/* ── Custom fonts từ file local ── */
+@font-face {
+  font-family: "Angel"; /* tên tùy đặt, dùng lại ở bước 3 */
+  src: url("./assets/fonts/ZFangelring.ttf") format("truetype");
+  font-weight: 400 900; /* nếu font có nhiều weight */
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MomoSignature";
+  src: url("./assets/fonts/MomoSignature.ttf") format("truetype");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HakgyoNal";
+  src: url("./assets/fonts/Hakgyoansim_Nalgae.otf") format("opentype");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Nếu font có file riêng cho bold thì khai báo thêm: */
+@font-face {
+  font-family: "Monday";
+  src: url("./assets/fonts/Monday.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   GLOBAL BASE LAYER — Editorial Korean Blog Reset
+   ============================================================ */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-cream;
+    font-family: "Angel", sans-serif;
+    color: #d98079;
+    font-feature-settings: "liga" 1, "kern" 1;
+  }
+
+  /* Selection colour — mint tint */
+  ::selection {
+    background-color: #a8ecd8;
+    color: #0f172a;
+  }
+
+  /* Focus rings: editorial mint */
+  :focus-visible {
+    outline: 2px solid #1dad8f;
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif text-ink-900;
+  }
+}
+
+/* ============================================================
+   COMPONENT UTILITIES
+   ============================================================ */
+
+@layer components {
+  /* ---- Post card hover overlay ---- */
+  .card-img-wrapper {
+    @apply relative overflow-hidden;
+  }
+
+  .card-img-wrapper img {
+    @apply w-full h-full object-cover transition-transform duration-700 ease-smooth;
+  }
+
+  .group:hover .card-img-wrapper img {
+    @apply scale-103;
+  }
+
+  /* ---- Mint underline link animation ---- */
+  .underline-grow {
+    @apply relative;
+  }
+
+  .underline-grow::after {
+    content: "";
+    @apply absolute left-0 bottom-0 w-full h-px bg-mint-500 scale-x-0 origin-right transition-transform duration-300 ease-smooth;
+  }
+
+  .underline-grow:hover::after {
+    @apply scale-x-100 origin-left;
+  }
+
+  /* ---- Category badge variants ---- */
+  .badge-mint {
+    @apply inline-block px-3 py-1 text-[10px] font-semibold tracking-tag uppercase
+           bg-mint-100 text-mint-700 rounded-full;
+  }
+
+  .badge-blush {
+    @apply inline-block px-3 py-1 text-[10px] font-semibold tracking-tag uppercase
+           bg-blush-100 text-blush-300 rounded-full;
+  }
+
+  .badge-neutral {
+    @apply inline-block px-3 py-1 text-[10px] font-semibold tracking-tag uppercase
+           bg-ink-100 text-ink-500 rounded-full;
+  }
+
+  /* edit size font color body content */
+  .article-body p {
+    @apply text-[1.25rem] leading-[1.875] mb-6;
+    font-family: "Angel", sans-serif;
+    color: #d98079;
+  }
+
+  .article-body h2 {
+    @apply font-serif text-2xl md:text-3xl font-bold text-ink-900 mt-14 mb-5 tracking-tight;
+  }
+
+  .article-body h3 {
+    @apply font-serif text-xl md:text-2xl font-semibold text-ink-800 mt-10 mb-4;
+  }
+
+  .article-body ul {
+    @apply list-none pl-0 mb-6 space-y-2;
+  }
+
+  .article-body ul li {
+    @apply pl-5 relative text-ink-700;
+  }
+
+  .article-body ul li::before {
+    content: "—";
+    @apply absolute left-0 text-mint-500 font-semibold;
+  }
+
+  .article-body ol {
+    @apply list-decimal pl-6 mb-6 space-y-2 text-ink-700;
+  }
+
+  .article-body blockquote {
+    @apply border-l-2 border-mint-400 pl-6 py-3 my-10 bg-mint-50 rounded-r-xl
+           text-ink-700 italic text-lg leading-relaxed;
+  }
+
+  .article-body a {
+    @apply text-mint-600 underline underline-offset-2 decoration-mint-300
+           hover:text-mint-700 hover:decoration-mint-500 transition-colors;
+  }
+
+  .article-body img {
+    @apply rounded-2xl my-10 w-full shadow-card;
+  }
+
+  .article-body hr {
+    @apply border-0 border-t border-ink-300 my-12;
+  }
+}
