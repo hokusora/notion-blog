@@ -4,6 +4,16 @@ import { useParams } from "react-router-dom";
 import { getArticlesByCategory } from "../services/notion";
 import Navbar from "../components/Navbar";
 import PostCard from "../components/PostCard";
+import Footer from "../components/Footer";
+
+const CATEGORY_BG_COLORS = {
+  default: '#b3ffd0',
+  korean: '#b3ffd0',
+  japanese: '#b3ffd0',
+  cpu: '#b3ffd0',
+  test: '#b3ffd0',
+  // Add unique hex codes per category slug here
+};
 
 // ── Màu riêng từng category — thêm/sửa slug và màu tùy ý ──
 const CATEGORY_THEMES = {
@@ -153,8 +163,9 @@ export default function CategoryPage() {
       <div
         className="min-h-screen flex flex-col"
         style={{
-          background: (CATEGORY_THEMES[categorySlug] || CATEGORY_THEMES.default)
-            .gradient,
+          backgroundColor:
+            CATEGORY_BG_COLORS[categorySlug?.toLowerCase()] ||
+            CATEGORY_BG_COLORS.default,
         }}
       >
         <Navbar theme={theme} />
@@ -178,8 +189,9 @@ export default function CategoryPage() {
     <div
       className="min-h-screen flex flex-col"
       style={{
-        background: (CATEGORY_THEMES[categorySlug] || CATEGORY_THEMES.default)
-          .gradient,
+        backgroundColor:
+          CATEGORY_BG_COLORS[categorySlug?.toLowerCase()] ||
+          CATEGORY_BG_COLORS.default,
       }}
     >
       <Navbar theme={theme} />
@@ -316,23 +328,7 @@ export default function CategoryPage() {
         )}
       </main>
 
-      <footer
-        className="border-t border-white/10 mt-16"
-        style={{
-          background: "rgba(195, 194, 194, 0.13)",
-          backdropFilter: "blur(24px) saturate(160%)",
-          WebkitBackdropFilter: "blur(24px) saturate(160%)",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-12 flex flex-col md:flex-row justify-between items-center gap-6">
-          <span className="font-serif text-base font-bold text-ink-900">
-            Hoku Sol
-          </span>
-          <p className="text-sm text-ink-500 text-center md:text-right">
-            © {new Date().getFullYear()} Hoku Sol. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

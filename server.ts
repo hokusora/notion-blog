@@ -25,8 +25,12 @@ async function startServer() {
     postHandler(req, res);
   });
 
-  app.get("/api/post/:slug", (req, res) => {
-    req.query.slug = req.params.slug;
+  app.get("/api/post/*slug", (req, res) => {
+    if (req.params.slug && !req.query.slug) {
+      req.query.slug = Array.isArray(req.params.slug)
+        ? req.params.slug.join("/")
+        : req.params.slug;
+    }
     postHandler(req, res);
   });
 

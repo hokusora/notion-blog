@@ -1,11 +1,17 @@
 // src/services/notion.js
 // Client-side service communicating with secure backend /api routes with graceful fallback
 
-import { MOCK_ARTICLES, MOCK_CATEGORIES } from "./mockData";
+import { MOCK_ARTICLES, MOCK_CATEGORIES, findMockArticleByPath } from "./mockData";
 
 export const getArticles = async () => {
   try {
-    const res = await fetch("/api/posts");
+    const res = await fetch("/api/posts", {
+      cache: "no-store",
+      headers: {
+        "Pragma": "no-cache",
+        "Cache-Control": "no-cache",
+      },
+    });
     if (!res.ok) {
       throw new Error(`HTTP error! status: ${res.status}`);
     }
@@ -22,7 +28,14 @@ export const getArticles = async () => {
 
 export const getArticleBySlug = async (slug) => {
   try {
-    const res = await fetch(`/api/post?slug=${encodeURIComponent(slug)}`);
+    const cleanSlug = String(slug || "").trim().replace(/^\/+|\/+$/g, "");
+    const res = await fetch(`/api/post?slug=${encodeURIComponent(cleanSlug)}`, {
+      cache: "no-store",
+      headers: {
+        "Pragma": "no-cache",
+        "Cache-Control": "no-cache",
+      },
+    });
     if (!res.ok) {
       throw new Error(`HTTP error! status: ${res.status}`);
     }
@@ -30,16 +43,22 @@ export const getArticleBySlug = async (slug) => {
     if (data && data.fields) {
       return data;
     }
-    return MOCK_ARTICLES.find((a) => a.fields.slug === slug) || null;
+    return findMockArticleByPath(cleanSlug);
   } catch (error) {
     console.warn(`Could not fetch article '${slug}' from Notion API, using fallback data:`, error);
-    return MOCK_ARTICLES.find((a) => a.fields.slug === slug) || null;
+    return findMockArticleByPath(slug);
   }
 };
 
 export const getArticlesByCategory = async (categorySlug) => {
   try {
-    const res = await fetch(`/api/posts?category=${encodeURIComponent(categorySlug)}`);
+    const res = await fetch(`/api/posts?category=${encodeURIComponent(categorySlug)}`, {
+      cache: "no-store",
+      headers: {
+        "Pragma": "no-cache",
+        "Cache-Control": "no-cache",
+      },
+    });
     if (!res.ok) {
       throw new Error(`HTTP error! status: ${res.status}`);
     }

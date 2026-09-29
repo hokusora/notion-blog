@@ -1,12 +1,53 @@
-/* ── Custom fonts từ file local ── */
+/* ============================================================
+   MULTILINGUAL EMBEDDED TYPOGRAPHY SETUP
+   ============================================================ */
+
+/* 1. Korean Font: Hakgyoansim Manito (OTF) */
 @font-face {
-  font-family: "Angel"; /* tên tùy đặt, dùng lại ở bước 3 */
-  src: url("./assets/fonts/ZFangelring.ttf") format("truetype");
-  font-weight: 400 900; /* nếu font có nhiều weight */
+  font-family: "HakgyoansimManito";
+  src: url("./assets/fonts/Hakgyoansim_ManitoR.otf") format("opentype");
+  /* [REMOTE/CDN PLACEHOLDER]
+     Paste remote font URL or base64 data URI here if local file is absent:
+     src: url("https://cdn.example.com/fonts/Hakgyoansim_ManitoR.otf") format("opentype"); */
+  font-weight: 400 700;
   font-style: normal;
   font-display: swap;
 }
 
+/* 2. Vietnamese Font: ZFangelring (TTF) */
+@font-face {
+  font-family: "ZFAngelring";
+  src: url("./assets/fonts/ZFangelring.ttf") format("truetype");
+  /* [REMOTE/CDN PLACEHOLDER]
+     Paste remote font URL or base64 data URI here if local file is absent:
+     src: url("https://cdn.example.com/fonts/ZFangelring.ttf") format("truetype"); */
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Backward compatibility alias for Angel */
+@font-face {
+  font-family: "Angel";
+  src: url("./assets/fonts/ZFangelring.ttf") format("truetype");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 3. Japanese Font: Keinan Mugimaru (TTF) */
+@font-face {
+  font-family: "KeinanMugimaru";
+  src: url("./assets/fonts/keinanmugimaru.ttf") format("truetype");
+  /* [REMOTE/CDN PLACEHOLDER]
+     Paste remote font URL or base64 data URI here if local file is absent:
+     src: url("https://cdn.example.com/fonts/keinanmugimaru.ttf") format("truetype"); */
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Additional Editorial & Display Fonts */
 @font-face {
   font-family: "MomoSignature";
   src: url("./assets/fonts/MomoSignature.ttf") format("truetype");
@@ -23,7 +64,6 @@
   font-display: swap;
 }
 
-/* Nếu font có file riêng cho bold thì khai báo thêm: */
 @font-face {
   font-family: "Monday";
   src: url("./assets/fonts/Monday.otf") format("opentype");
@@ -123,53 +163,181 @@
            bg-ink-100 text-ink-500 rounded-full;
   }
 
-  /* edit size font color body content */
-  .article-body p {
+  /* ============================================================
+     DYNAMIC MULTILINGUAL TYPOGRAPHY UTILITIES
+     ============================================================ */
+  .font-korean {
+    font-family: "HakgyoansimManito", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  }
+
+  .font-vietnamese {
+    font-family: "ZFAngelring", "Angel", -apple-system, BlinkMacSystemFont, "Be Vietnam Pro", "Segoe UI", sans-serif;
+  }
+
+  .font-japanese {
+    font-family: "KeinanMugimaru", -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Noto Sans JP", sans-serif;
+  }
+
+  .font-default {
+    font-family: inherit;
+  }
+
+  /* ============================================================
+     ARTICLE CONTAINER & CONTENT STYLING
+     Controlled dynamically by Notion database properties:
+     - Font family (.font-korean, .font-vietnamese, .font-japanese, or .font-default)
+     - Text color (--article-text-color, defaults to #30a6a6)
+     ============================================================ */
+  .article-container {
+    --article-text-color: #30a6a6;
+    font-family: inherit;
+  }
+
+  /* Ensure paragraphs, list items, and base spans use var(--article-text-color) */
+  .article-container .article-body,
+  .article-container .notion-blocks-flow {
+    color: var(--article-text-color);
+  }
+
+  .article-container .article-body p,
+  .article-container .notion-blocks-flow p {
     @apply text-[1.25rem] leading-[1.875] mb-6;
-    font-family: "Angel", sans-serif;
-    color: #d98079;
+    color: var(--article-text-color);
   }
 
-  .article-body h2 {
-    @apply font-serif text-2xl md:text-3xl font-bold text-ink-900 mt-14 mb-5 tracking-tight;
+  .article-container .article-body li,
+  .article-container .notion-blocks-flow li {
+    color: var(--article-text-color);
   }
 
-  .article-body h3 {
-    @apply font-serif text-xl md:text-2xl font-semibold text-ink-800 mt-10 mb-4;
+  /* Base unstyled text spans inherit body color without overriding inline color annotations or badges */
+  .article-container .article-body span:not([class*="text-"]):not([class*="bg-"]):not([class*="badge"]):not(code):not(a),
+  .article-container .notion-blocks-flow span:not([class*="text-"]):not([class*="bg-"]):not([class*="badge"]):not(code):not(a) {
+    color: var(--article-text-color);
   }
 
-  .article-body ul {
+  /* Formatting weights and styles - preserved strictly without font-family interference */
+  .article-container strong,
+  .article-container b {
+    font-weight: 700;
+  }
+
+  .article-container em,
+  .article-container i {
+    font-style: italic;
+  }
+
+  .article-container u {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .article-container del,
+  .article-container s {
+    text-decoration: line-through;
+  }
+
+  /* Headings retain their distinct structural accents and dark contrast while respecting chosen font family */
+  .article-container h1,
+  .article-container h2,
+  .article-container h3,
+  .article-container h4,
+  .article-container h5,
+  .article-container h6 {
+    font-family: inherit;
+  }
+
+  .article-container h1,
+  .article-container .article-body h1 {
+    color: #0f172a;
+  }
+
+  .article-container h2,
+  .article-container .article-body h2 {
+    color: #1e293b;
+  }
+
+  .article-container h3,
+  .article-container .article-body h3 {
+    color: #334155;
+  }
+
+  .article-container ul,
+  .article-container .article-body ul {
     @apply list-none pl-0 mb-6 space-y-2;
   }
 
-  .article-body ul li {
-    @apply pl-5 relative text-ink-700;
+  .article-container ul li,
+  .article-container .article-body ul li {
+    @apply pl-5 relative;
+    color: var(--article-text-color);
+    font-family: inherit;
   }
 
-  .article-body ul li::before {
+  .article-container ul li::before,
+  .article-container .article-body ul li::before {
     content: "—";
     @apply absolute left-0 text-mint-500 font-semibold;
   }
 
-  .article-body ol {
-    @apply list-decimal pl-6 mb-6 space-y-2 text-ink-700;
+  .article-container ol,
+  .article-container .article-body ol {
+    @apply list-decimal pl-6 mb-6 space-y-2;
+    color: var(--article-text-color);
+    font-family: inherit;
   }
 
-  .article-body blockquote {
+  .article-container ol li,
+  .article-container .article-body ol li {
+    color: var(--article-text-color);
+    font-family: inherit;
+  }
+
+  /* Blockquotes retain distinct structural styling and background accent */
+  .article-container blockquote,
+  .article-container .article-body blockquote {
     @apply border-l-2 border-mint-400 pl-6 py-3 my-10 bg-mint-50 rounded-r-xl
-           text-ink-700 italic text-lg leading-relaxed;
+           italic text-lg leading-relaxed shadow-sm;
+    font-family: inherit;
+    color: #334155;
   }
 
-  .article-body a {
+  /* Links and code blocks retain distinct accent colors */
+  .article-container a:not(.subpage-card),
+  .article-container .article-body a:not(.subpage-card) {
     @apply text-mint-600 underline underline-offset-2 decoration-mint-300
            hover:text-mint-700 hover:decoration-mint-500 transition-colors;
   }
 
-  .article-body img {
+  .article-container a.subpage-card,
+  .article-container .article-body a.subpage-card {
+    text-decoration: none !important;
+  }
+
+  .article-container code,
+  .article-container pre {
+    font-family: monospace;
+  }
+
+  /* Body content images */
+  .article-container .article-body > img,
+  .article-container .notion-blocks-flow > img,
+  .article-container figure img {
     @apply rounded-2xl my-10 w-full shadow-card;
   }
 
-  .article-body hr {
+  /* Sub-page card thumbnail edge-to-edge guarantee */
+  .article-container a.subpage-card img,
+  .article-container .subpage-card img {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    max-height: none !important;
+  }
+
+  .article-container hr,
+  .article-container .article-body hr {
     @apply border-0 border-t border-ink-300 my-12;
   }
 }
+

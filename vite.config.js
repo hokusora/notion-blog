@@ -13,9 +13,15 @@ function apiMiddlewarePlugin() {
             req.query = Object.fromEntries(url.searchParams);
             return postsHandler(req, res);
           }
-          if (url.pathname === "/api/post") {
+          if (url.pathname === "/api/post" || url.pathname.startsWith("/api/post/")) {
             const { default: postHandler } = await import("./api/post.js");
             req.query = Object.fromEntries(url.searchParams);
+            if (url.pathname.startsWith("/api/post/")) {
+              const slugFromPath = decodeURIComponent(url.pathname.slice("/api/post/".length));
+              if (slugFromPath && !req.query.slug) {
+                req.query.slug = slugFromPath;
+              }
+            }
             return postHandler(req, res);
           }
           if (url.pathname === "/api/categories") {

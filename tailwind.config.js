@@ -50,7 +50,10 @@ export default {
         serif: ["Angel", "Georgia", "serif"], // titles, headings
         sans: ["HakgyoNal", "system-ui", "sans-serif"], // body, UI
         monday: ["Monday", "sans-serif"], // dùng bằng class font-monday
-        momosignature: ["MomoSignature", "sans-serif"], // ← thêm dòng này
+        momosignature: ["MomoSignature", "sans-serif"],
+        korean: ["HakgyoansimManito", "-apple-system", "BlinkMacSystemFont", "'Apple SD Gothic Neo'", "'Malgun Gothic'", "sans-serif"],
+        vietnamese: ["ZFAngelring", "Angel", "-apple-system", "BlinkMacSystemFont", "'Be Vietnam Pro'", "sans-serif"],
+        japanese: ["KeinanMugimaru", "-apple-system", "BlinkMacSystemFont", "'Hiragino Kaku Gothic ProN'", "'Yu Gothic'", "sans-serif"],
         mono: ["'JetBrains Mono'", "monospace"],
       },
 
