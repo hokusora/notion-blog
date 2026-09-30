@@ -76,21 +76,21 @@ export default function Footer() {
             <button
               type="button"
               onClick={() => setActiveModal("Individuality")}
-              className="hover:text-ink-900 transition-colors underline-grow cursor-pointer bg-transparent border-none p-0 text-xs font-sans text-ink-500"
+              className="hover:text-ink-900 transition-colors underline-grow cursor-pointer bg-transparent border-none p-0 text-base font-sans text-[#4e056e]"
             >
               Individuality
             </button>
             <button
               type="button"
               onClick={() => setActiveModal("Vision")}
-              className="hover:text-ink-900 transition-colors underline-grow cursor-pointer bg-transparent border-none p-0 text-xs font-sans text-ink-500"
+              className="hover:text-ink-900 transition-colors underline-grow cursor-pointer bg-transparent border-none p-0 text-base font-sans text-[#4e056e]"
             >
               Vision
             </button>
             <button
               type="button"
               onClick={() => setActiveModal("Personal Info")}
-              className="hover:text-ink-900 transition-colors underline-grow cursor-pointer bg-transparent border-none p-0 text-xs font-sans text-ink-500"
+              className="hover:text-ink-900 transition-colors underline-grow cursor-pointer bg-transparent border-none p-0 text-lg font-sans text-[#4e056e]"
             >
               Personal Info
             </button>

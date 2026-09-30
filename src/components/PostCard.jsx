@@ -108,8 +108,8 @@ export default function PostCard({ article, index = 0, theme = {} }) {
       {/* ── Title (serif) ── */}
       <Link to={articleUrl} className="block mb-3">
         <h2
-          className="font-['MomoSignature'] text-[18px] md:text-[24px] font-bold leading-snug transition-colors duration-300 group-hover:text-mint-700"
-          style={{ color: theme.cardTitleColor || "#9370db" }}
+          className="post-card-title font-['MomoSignature'] text-[18px] md:text-[24px] font-bold leading-snug transition-colors duration-300 group-hover:opacity-80"
+          style={{ color: theme.cardTitleColor || "#4e056e" }}
         >
           {title}
         </h2>

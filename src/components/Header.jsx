@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
+import ThemeToggle from "./ThemeToggle";
 
 // ============================================================
 // HEADER — Compact site header used by App.jsx for the
-// article detail route. Logic and Link unchanged.
+// article detail route. Includes Dark Mode toggle.
 // ============================================================
 
 const Header = () => {
@@ -17,15 +18,16 @@ const Header = () => {
           </span>
         </Link>
 
-        {/* Single nav link */}
-        <nav>
+        {/* Nav actions: Link + Dark Mode Toggle */}
+        <div className="flex items-center gap-4">
           <Link
             to="/"
             className="text-sm font-medium text-ink-500 hover:text-ink-900 transition-colors underline-grow py-1"
           >
             Articles
           </Link>
-        </nav>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

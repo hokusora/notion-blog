@@ -341,3 +341,185 @@
   }
 }
 
+/* ============================================================
+   GLOBAL DUAL-COLOR DARK THEME SYSTEM
+   Color 1 (Background): #000000 (Pure Pitch Black)
+   Color 2 (Text & Accents): #9ffccb (Mint Green)
+   Swap hex codes in :root to customize colors later.
+   ============================================================ */
+
+:root {
+  --theme-dark-bg: #000000;
+  --theme-dark-text: #9ffccb;
+  --theme-dark-border: #14241c;
+  --post-title-color: #ffbee5;
+}
+
+/* Parent & Child Post Titles (#ffbee5) in Dark Mode only */
+html.dark .post-card-title,
+html.dark .subpage-card-title,
+html.dark .article-detail-title {
+  color: var(--post-title-color) !important;
+}
+
+/* 1. Global Page Backgrounds */
+html.dark,
+html.dark body {
+  background-color: var(--theme-dark-bg) !important;
+  color: var(--theme-dark-text) !important;
+}
+
+html.dark,
+html.dark body,
+html.dark #root,
+html.dark .min-h-screen,
+html.dark nav,
+html.dark header,
+html.dark footer,
+html.dark main,
+html.dark section,
+html.dark article,
+html.dark .bg-blog-gradient,
+html.dark [style*="background"] {
+  background-color: var(--theme-dark-bg) !important;
+  background-image: none !important;
+}
+
+/* 2. Global Typography & Accents (#9ffccb) */
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6,
+html.dark p,
+html.dark span:not(.theme-toggle-icon),
+html.dark a,
+html.dark li,
+html.dark strong,
+html.dark b,
+html.dark em,
+html.dark i,
+html.dark u,
+html.dark del,
+html.dark s,
+html.dark blockquote,
+html.dark button:not(.theme-toggle-btn),
+html.dark time,
+html.dark figcaption,
+html.dark label {
+  color: var(--theme-dark-text) !important;
+}
+
+/* 3. Neutralize Borders & Card Backgrounds */
+html.dark div,
+html.dark nav,
+html.dark header,
+html.dark footer,
+html.dark main,
+html.dark article,
+html.dark section,
+html.dark hr {
+  border-color: var(--theme-dark-border) !important;
+}
+
+html.dark .bg-cream,
+html.dark .bg-cream-dark,
+html.dark .bg-white,
+html.dark .bg-pink-50,
+html.dark .bg-pink-50\/50,
+html.dark .bg-pink-50\/60,
+html.dark .bg-pink-50\/80,
+html.dark .bg-mint-50,
+html.dark .bg-mint-50\/80,
+html.dark .bg-mint-100,
+html.dark .bg-blush-100,
+html.dark .bg-ink-100,
+html.dark .bg-ink-100\/60,
+html.dark .bg-ink-800,
+html.dark .bg-ink-900 {
+  background-color: var(--theme-dark-bg) !important;
+}
+
+/* 4. Badges, Tags & Links */
+html.dark .badge-mint,
+html.dark .badge-blush,
+html.dark .badge-neutral,
+html.dark [class*="badge"] {
+  background-color: var(--theme-dark-bg) !important;
+  color: var(--theme-dark-text) !important;
+  border: 1px solid var(--theme-dark-text) !important;
+}
+
+html.dark a:hover,
+html.dark button:hover:not(.theme-toggle-btn) {
+  color: var(--theme-dark-text) !important;
+  opacity: 0.85;
+}
+
+html.dark .underline-grow::after {
+  background-color: var(--theme-dark-text) !important;
+}
+
+/* 5. Article Detail & Content Flow Overrides */
+html.dark .article-container {
+  --article-text-color: var(--theme-dark-text) !important;
+}
+
+html.dark .article-container .article-body,
+html.dark .article-container .notion-blocks-flow {
+  color: var(--theme-dark-text) !important;
+}
+
+html.dark .article-container blockquote {
+  background-color: #040e08 !important;
+  border-left-color: var(--theme-dark-text) !important;
+  color: var(--theme-dark-text) !important;
+}
+
+html.dark .article-container a {
+  color: var(--theme-dark-text) !important;
+  text-decoration-color: var(--theme-dark-text) !important;
+}
+
+html.dark .article-container pre,
+html.dark .article-container code {
+  background-color: #07140c !important;
+  color: var(--theme-dark-text) !important;
+}
+
+/* 6. Pagination & Modals */
+html.dark button[aria-current="page"] {
+  background-color: var(--theme-dark-text) !important;
+  color: var(--theme-dark-bg) !important;
+}
+
+html.dark [role="dialog"] > div {
+  background-color: var(--theme-dark-bg) !important;
+  background-image: none !important;
+  border: 1px solid var(--theme-dark-text) !important;
+}
+
+html.dark [role="dialog"] * {
+  color: var(--theme-dark-text) !important;
+}
+
+/* 7. Preserve Navbar Theme Toggle Button Gradient & Media */
+html.dark .theme-toggle-btn {
+  background: linear-gradient(to bottom right, #fff8dc, #ffc0db, #ffe3de) !important;
+  background-image: linear-gradient(to bottom right, #fff8dc, #ffc0db, #ffe3de) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+html.dark .theme-toggle-btn svg {
+  color: var(--theme-dark-text) !important;
+  stroke: var(--theme-dark-text) !important;
+}
+
+html.dark video,
+html.dark iframe,
+html.dark img {
+  opacity: 0.95;
+  border-color: var(--theme-dark-border) !important;
+}
+

@@ -2,12 +2,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getCategories } from "../services/notion";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar({ theme = {} }) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [categories, setCategories] = useState([]);
-
   // Fetch categories từ Contentful khi mount
   useEffect(() => {
     getCategories().then(setCategories);
@@ -70,36 +70,42 @@ export default function Navbar({ theme = {} }) {
             })}
           </div>
 
-          {/* ── Mobile Menu Toggle Button ── */}
-          <div className="flex md:hidden">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="hover:opacity-70 focus:outline-none transition-opacity"
-              style={{ color: theme.navLogoColor || "#1a1a2e" }}
-            >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+          {/* ── Right Actions: Dark Mode Toggle + Mobile Menu Toggle Button ── */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* ── Circular Dark Mode Toggle Button ── */}
+            <ThemeToggle />
+
+            {/* ── Mobile Menu Toggle Button ── */}
+            <div className="flex md:hidden">
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="hover:opacity-70 focus:outline-none transition-opacity"
+                style={{ color: theme.navLogoColor || "#1a1a2e" }}
               >
-                {isOpen ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                )}
-              </svg>
-            </button>
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  {isOpen ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  )}
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -89,7 +89,10 @@ export default function SubPageCard({
               </span>
               <span className="text-xs text-ink-400">· Click to explore</span>
             </div>
-            <h4 className="font-serif text-lg sm:text-xl font-bold text-ink-900 group-hover:text-mint-700 transition-colors leading-snug line-clamp-2">
+            <h4
+              className="subpage-card-title font-serif text-xl sm:text-2x1 font-bold transition-colors leading-snug line-clamp-2 group-hover:opacity-80"
+              style={{ color: "#4e056e" }}
+            >
               {cleanTitle}
             </h4>
             {excerpt && (

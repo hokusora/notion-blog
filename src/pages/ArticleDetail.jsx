@@ -581,7 +581,10 @@ const ArticleDetail = () => {
             </div>
 
             {/* Title */}
-            <h1 className="font-['MomoSignature'] text-[2rem] md:text-[2.25rem] lg:text-[4.25rem] font-bold text-[#7b6dff] tracking-tight leading-[1.15] mb-0">
+            <h1
+              className="article-detail-title font-['MomoSignature'] text-[2rem] md:text-[2.25rem] lg:text-[4.25rem] font-bold tracking-tight leading-[1.15] mb-0"
+              style={{ color: "#4e056e" }}
+            >
               {title}
             </h1>
           </header>
