@@ -79,7 +79,7 @@ const CATEGORY_THEMES = {
   },
   default: {
     gradient: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
-    titleColor: "#f1f5f9",
+    titleColor: "#0f172a",
     navLinkColor: "#e46e7a",
     navLinkHover: "#7b6dff",
     navLogoColor: "#f1f5f9",
@@ -217,8 +217,8 @@ export default function CategoryPage() {
             </p>
           </div>
           <div className="flex-shrink-0">
-            <span className="badge-mint text-xs px-4 py-2 rounded-full">
-              {articles.length} Articles
+            <span className="badge-mint text-s px-4 py-2 rounded-full">
+              {articles.length} Pieces
             </span>
           </div>
         </header>

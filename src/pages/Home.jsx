@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getArticles } from "../services/notion";
 import Navbar from "../components/Navbar";
 import PostCard from "../components/PostCard";
+import Footer from "../components/Footer";
 
 // ── Số bài mỗi trang ──
 const POSTS_PER_PAGE = 9;
@@ -100,15 +101,15 @@ export default function Home() {
         <header className="mb-16 md:mb-20">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 mb-5">
-            <span className="text-[10px] font-semibold tracking-ultra-wide text-ink-500 uppercase">
+            <span className="text-[18px] font-semibold tracking-ultra-wide text-ink-500 uppercase">
               Home
             </span>
             <span className="text-ink-300 text-xs">›</span>
-            <span className="text-[10px] font-semibold tracking-ultra-wide text-ink-500 uppercase">
+            <span className="text-[18px] font-semibold tracking-ultra-wide text-ink-500 uppercase">
               Hangug
             </span>
             <span className="text-ink-300 text-xs">›</span>
-            <span className="text-[10px] font-semibold tracking-ultra-wide text-mint-600 uppercase">
+            <span className="text-[18px] font-semibold tracking-ultra-wide text-mint-600 uppercase">
               Jeonja
             </span>
           </div>
@@ -123,22 +124,27 @@ export default function Home() {
                 className="font-serif text-[2.5rem] md:text-[3.25rem] font-bold text-ink-900
                              tracking-tight leading-[1.1]"
               >
-                Culture{" "}
+                Seoul{" "}
                 <span className="font-normal italic text-mint-600">
-                  &amp; Others
+                  &amp; Busan
                 </span>
-                <span className="ml-3 text-3xl">🎎</span>
+                <span className="ml-3 text-3xl">❤️‍🔥🔥🌌🌠❄️🍸🍵🥤🍧🌭🍞🥐🩵🩷</span>
               </h1>
               <p className="mt-4 text-2xl leading-relaxed max-w-lg font-['Angel'] text-[#d98079]">
-                Dive into the heart of South Korea. Explore traditions, modern
-                lifestyle, and everything in between.
+            📍Haeundae Traditional Market
+22-1 Gunam-ro 41beon-gil,
+Haeundae-gu, Busan, South Korea
+📍Location : 63, Gwangan-ro 22beon-gil, Suyeong-gu, Busan, Republic of Korea
+   
+
+
               </p>
             </div>
 
             {/* Article count badge */}
             <div className="flex-shrink-0">
               <span className="badge-mint text-xs px-4 py-2 rounded-full">
-                {articles.length} Articles
+                {articles.length} PIECes
               </span>
             </div>
           </div>
@@ -238,52 +244,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* ── Footer ── */}
-      <footer
-        className="border-t border-white/10 mt-16"
-        style={{
-          background: "rgba(234, 228, 228, 0.51)",
-          backdropFilter: "blur(24px) saturate(160%)",
-          WebkitBackdropFilter: "blur(24px) saturate(160%)",
-        }}
-      >
-        <div
-          className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-12
-                        flex flex-col md:flex-row justify-between items-center gap-6"
-        >
-          {/* Brand */}
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-mint-500" />
-            <span className="font-serif text-base font-bold text-ink-900 tracking-tight"></span>
-          </div>
-
-          <p className="text-xs text-ink-500 order-last md:order-none">
-            © {new Date().getFullYear()} Hoku Sol. All rights reserved.
-          </p>
-
-          {/* Footer links */}
-          <div className="flex gap-6 text-xs text-ink-500">
-            <a
-              href="#"
-              className="hover:text-ink-900 transition-colors underline-grow"
-            >
-              About
-            </a>
-            <a
-              href="#"
-              className="hover:text-ink-900 transition-colors underline-grow"
-            >
-              Vision
-            </a>
-            <a
-              href="#"
-              className="hover:text-ink-900 transition-colors underline-grow"
-            >
-              Contact
-            </a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

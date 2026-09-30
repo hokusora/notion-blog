@@ -1,23 +1,29 @@
 import { useState, useEffect } from "react";
 
 const MODAL_CONTENT = {
-  About: {
-    title: "About",
-    content: "Hoàng Khương (hokusol)",
-    isLink: false,
+  Individuality: {
+    title: "Individuality",
+    content: "Hoang Khuong (hokusol) 🌌🌠❄️",
+    isPersonalInfo: false,
   },
   Vision: {
     title: "Vision",
     content: "mac pro, yamaha, ssd samsung, sony camera",
-    isLink: false,
+    isPersonalInfo: false,
   },
-  Contact: {
-    title: "Contact",
-    content: "hoangkhuong2146@gmail.com",
-    href: "mailto:hoangkhuong2146@gmail.com",
-    isLink: true,
+  "Personal Info": {
+    title: "Personal Info",
+    email: "hoangkhuong2146@gmail.com",
+    github: "https://github.com/hokusora?tab=repositories",
+    isPersonalInfo: true,
   },
 };
+
+// Aliases for compatibility
+MODAL_CONTENT.About = MODAL_CONTENT.Individuality;
+MODAL_CONTENT.Myself = MODAL_CONTENT.Individuality;
+MODAL_CONTENT.Contact = MODAL_CONTENT["Personal Info"];
+MODAL_CONTENT["renkaku shiyo"] = MODAL_CONTENT["Personal Info"];
 
 export default function Footer() {
   const [activeModal, setActiveModal] = useState(null);
@@ -69,10 +75,10 @@ export default function Footer() {
           <div className="flex gap-6 text-xs text-ink-500">
             <button
               type="button"
-              onClick={() => setActiveModal("About")}
+              onClick={() => setActiveModal("Individuality")}
               className="hover:text-ink-900 transition-colors underline-grow cursor-pointer bg-transparent border-none p-0 text-xs font-sans text-ink-500"
             >
-              About
+              Individuality
             </button>
             <button
               type="button"
@@ -83,10 +89,10 @@ export default function Footer() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveModal("Contact")}
+              onClick={() => setActiveModal("Personal Info")}
               className="hover:text-ink-900 transition-colors underline-grow cursor-pointer bg-transparent border-none p-0 text-xs font-sans text-ink-500"
             >
-              Contact
+              Personal Info
             </button>
           </div>
         </div>
@@ -133,20 +139,30 @@ export default function Footer() {
             </button>
 
             {/* Modal text styling & content */}
-            <div className="font-korean px-4 max-w-full">
-              <span className="text-xs uppercase tracking-widest text-[#ad103a]/70 block mb-2 font-semibold">
+            <div className="font-korean px-4 max-w-full italic">
+              <span className="text-xs uppercase tracking-widest text-[#ad103a]/70 block mb-3 font-semibold italic">
                 {activeData.title}
               </span>
 
-              {activeData.isLink ? (
-                <a
-                  href={activeData.href}
-                  className="text-lg sm:text-xl font-bold text-[#ad103a] underline underline-offset-4 hover:opacity-80 transition-opacity break-all"
-                >
-                  {activeData.content}
-                </a>
+              {activeData.isPersonalInfo ? (
+                <div className="flex flex-col items-center gap-2.5 italic">
+                  <a
+                    href={`mailto:${activeData.email}`}
+                    className="text-base sm:text-lg font-bold text-[#ad103a] underline underline-offset-4 hover:opacity-80 transition-opacity break-all italic"
+                  >
+                    {activeData.email}
+                  </a>
+                  <a
+                    href={activeData.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-base sm:text-lg font-bold text-[#ad103a] underline underline-offset-4 hover:opacity-80 transition-opacity italic"
+                  >
+                    github
+                  </a>
+                </div>
               ) : (
-                <p className="text-lg sm:text-xl font-bold text-[#ad103a] leading-relaxed break-words">
+                <p className="text-lg sm:text-xl font-bold text-[#ad103a] leading-relaxed break-words italic">
                   {activeData.content}
                 </p>
               )}

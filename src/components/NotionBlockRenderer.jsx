@@ -1,6 +1,27 @@
 import SubPageCard from "./SubPageCard";
 import { slugifyHeading, slugify } from "../utils/slugify";
 
+// Audio file detection regex supporting Notion AWS S3 query parameters
+const AUDIO_REGEX = /\.(mp3|wav|m4a|aac)(\?.*)?$/i;
+
+function AudioPlayerBlock({ audioUrl }) {
+  return (
+    <div className="my-5 w-full max-w-xl mx-auto p-4 rounded-2xl bg-pink-50/60 border border-pink-200/70 shadow-sm flex flex-col gap-2">
+      <div className="flex items-center gap-2 text-xs font-medium text-pink-700">
+        <span>🎵 Audio Track</span>
+      </div>
+      <audio
+        controls
+        preload="metadata"
+        className="w-full h-10 accent-pink-500"
+        src={audioUrl}
+      >
+        Your browser does not support the audio element.
+      </audio>
+    </div>
+  );
+}
+
 // Notion color mappings for text and background highlights
 const NOTION_COLOR_MAP = {
   // Text colors
@@ -86,17 +107,23 @@ export function NotionRichText({ richText }) {
         // Link
         const href = segment.href || segment.text?.link?.url;
         if (href) {
-          element = (
-            <a
-              key={idx}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-mint-600 underline underline-offset-2 decoration-mint-300 hover:text-mint-700 hover:decoration-mint-500 transition-colors"
-            >
-              {element}
-            </a>
-          );
+          if (AUDIO_REGEX.test(href)) {
+            element = (
+              <AudioPlayerBlock key={idx} audioUrl={href} />
+            );
+          } else {
+            element = (
+              <a
+                key={idx}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-mint-600 underline underline-offset-2 decoration-mint-300 hover:text-mint-700 hover:decoration-mint-500 transition-colors"
+              >
+                {element}
+              </a>
+            );
+          }
         }
 
         return element;
@@ -211,6 +238,18 @@ export default function NotionBlockRenderer({
             if (!richText || richText.length === 0) {
               return <div key={blockId} className="h-4" />;
             }
+
+            const firstHref = richText[0]?.href || richText[0]?.text?.link?.url;
+            const plainText = getRichTextString(richText).trim();
+            const directAudioUrl =
+              (richText.length === 1 && firstHref && AUDIO_REGEX.test(firstHref))
+                ? firstHref
+                : (AUDIO_REGEX.test(plainText) ? plainText : null);
+
+            if (directAudioUrl) {
+              return <AudioPlayerBlock key={blockId} audioUrl={directAudioUrl} />;
+            }
+
             return (
               <p
                 key={blockId}
@@ -432,12 +471,23 @@ export default function NotionBlockRenderer({
             );
           }
 
+          // AUDIO BLOCK
+          case "audio": {
+            const audioData = block.audio;
+            const url = audioData?.file?.url || audioData?.external?.url || "";
+            if (!url) return null;
+            return <AudioPlayerBlock key={blockId} audioUrl={url} />;
+          }
+
           // FILE BLOCK
           case "file": {
             const fileData = block.file;
             const url = fileData?.file?.url || fileData?.external?.url || "";
             const name = fileData?.name || "Download file";
             if (!url) return null;
+            if (AUDIO_REGEX.test(url)) {
+              return <AudioPlayerBlock key={blockId} audioUrl={url} />;
+            }
             return (
               <div key={blockId} className="my-6">
                 <a
@@ -456,6 +506,9 @@ export default function NotionBlockRenderer({
           case "embed": {
             const url = block.embed?.url;
             if (!url) return null;
+            if (AUDIO_REGEX.test(url)) {
+              return <AudioPlayerBlock key={blockId} audioUrl={url} />;
+            }
             return (
               <div key={blockId} className="my-7 w-full overflow-hidden rounded-2xl shadow-sm border border-ink-300/30">
                 <iframe
