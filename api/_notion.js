@@ -388,12 +388,13 @@ export async function enrichChildPageBlocks(notion, blocks) {
   return blocks;
 }
 
-// Fetch all child blocks for a given block or page ID with pagination and caching
-export async function getBlockChildren(notion, blockId) {
+// Fetch all child blocks for a given block or page ID with pagination, caching, and recursive nested block resolution
+export async function getBlockChildren(notion, blockId, currentDepth = 0, maxDepth = 3) {
   const cleanId = parseNotionId(blockId);
   if (!cleanId || !notion) return [];
 
-  const cached = blockChildrenCache.get(cleanId);
+  const cacheKey = `${cleanId}_d${currentDepth}`;
+  const cached = blockChildrenCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     return cached.data;
   }
@@ -414,7 +415,48 @@ export async function getBlockChildren(notion, blockId) {
       cursor = response?.has_more ? response.next_cursor : undefined;
     } while (cursor);
 
-    blockChildrenCache.set(cleanId, { timestamp: Date.now(), data: allBlocks });
+    // Recursively resolve nested child blocks (toggles, sub-bullets, sub-tasks, callouts, quotes, tables)
+    // and query child_database entries
+    if (currentDepth < maxDepth) {
+      await Promise.all(
+        allBlocks.map(async (b) => {
+          if (b.type === "child_database") {
+            try {
+              const dbRes = await queryNotionDatabase(notion, b.id);
+              const items = (dbRes?.results || []).map((page) => {
+                const mapped = mapNotionPageToArticle(page);
+                return {
+                  id: page.id,
+                  title: mapped.fields.title,
+                  slug: mapped.fields.slug,
+                  category: mapped.fields.category?.fields?.title || "",
+                  categorySlug: mapped.fields.category?.fields?.slug || "",
+                  date: mapped.fields.date,
+                  tags: mapped.fields.tags || [],
+                  cover: mapped.fields.coverImage?.fields?.file?.url || null,
+                  excerpt: mapped.fields.excerpt || "",
+                };
+              });
+              if (!b.child_database) b.child_database = {};
+              b.child_database.items = items;
+            } catch (dbErr) {
+              console.warn(`Could not query child_database ${b.id}:`, dbErr.message);
+              if (!b.child_database) b.child_database = {};
+              b.child_database.items = [];
+            }
+          } else if (b.has_children && b.type !== "child_page") {
+            try {
+              b.children = await getBlockChildren(notion, b.id, currentDepth + 1, maxDepth);
+            } catch (childErr) {
+              console.warn(`Could not fetch children for block ${b.id}:`, childErr.message);
+              b.children = [];
+            }
+          }
+        })
+      );
+    }
+
+    blockChildrenCache.set(cacheKey, { timestamp: Date.now(), data: allBlocks });
     return allBlocks;
   } catch (err) {
     console.error(`Error fetching child blocks for block ${cleanId}:`, err);
