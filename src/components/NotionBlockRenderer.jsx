@@ -1,5 +1,22 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import Prism from "prismjs";
+import "prismjs/components/prism-javascript";
+import "prismjs/components/prism-typescript";
+import "prismjs/components/prism-jsx";
+import "prismjs/components/prism-tsx";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-css";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-json";
+import "prismjs/components/prism-sql";
+import "prismjs/components/prism-markdown";
+import "prismjs/components/prism-c";
+import "prismjs/components/prism-cpp";
+import "prismjs/components/prism-java";
+import "prismjs/components/prism-rust";
+import "prismjs/components/prism-go";
+import "prismjs/components/prism-yaml";
 import SubPageCard from "./SubPageCard";
 import { slugifyHeading, slugify } from "../utils/slugify";
 
@@ -140,12 +157,60 @@ function getRichTextString(richText) {
   return richText.map((t) => t.plain_text || t.text?.content || "").join("");
 }
 
-// Notion Official Code Block with language tag and clipboard copy
+// Language alias mapping for Prism.js
+const PRISM_LANG_MAP = {
+  js: "javascript",
+  ts: "typescript",
+  py: "python",
+  sh: "bash",
+  shell: "bash",
+  zsh: "bash",
+  html: "markup",
+  xml: "markup",
+  "c++": "cpp",
+  "c#": "csharp",
+  yml: "yaml",
+  md: "markdown",
+  golang: "go",
+  rb: "ruby",
+};
+
+function highlightCode(code, lang) {
+  if (!code) return "";
+  const normalized = (lang || "").toLowerCase().trim();
+  const prismLang = PRISM_LANG_MAP[normalized] || normalized;
+
+  if (Prism.languages[prismLang]) {
+    try {
+      return Prism.highlight(code, Prism.languages[prismLang], prismLang);
+    } catch {
+      // fallback
+    }
+  }
+
+  // Fallback to javascript syntax or escaped HTML
+  if (Prism.languages.javascript) {
+    try {
+      return Prism.highlight(code, Prism.languages.javascript, "javascript");
+    } catch {
+      // fallback
+    }
+  }
+
+  return code
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// Notion Official Code Block with language tag, syntax highlighting, and two-axis sliders
 function NotionCodeBlock({ block }) {
   const [copied, setCopied] = useState(false);
   const lang = block.code?.language || "plain text";
   const codeText = getRichTextString(block.code?.rich_text);
   const caption = getRichTextString(block.code?.caption);
+
+  const highlightedHtml = highlightCode(codeText, lang);
 
   const handleCopy = () => {
     if (!codeText) return;
@@ -156,15 +221,16 @@ function NotionCodeBlock({ block }) {
   };
 
   return (
-    <div className="notion-code-block my-7 rounded-xl overflow-hidden shadow-sm border border-ink-300/30 bg-ink-950 font-mono text-sm">
-      <div className="bg-ink-900/90 px-4 py-2 flex items-center justify-between text-xs text-ink-300 border-b border-ink-800">
-        <span className="font-semibold text-mint-400 lowercase tracking-wide font-mono">
+    <div className="notion-code-block my-7 rounded-xl overflow-hidden shadow-sm border border-ink-300/30 bg-[#191919] font-mono text-sm max-w-full w-full">
+      {/* Code Header Bar */}
+      <div className="bg-[#202020] px-4 py-2 flex items-center justify-between text-xs text-ink-300 border-b border-[#2d2d2d] select-none">
+        <span className="font-semibold text-mint-400 lowercase tracking-wide font-mono text-xs">
           {lang}
         </span>
         <button
           type="button"
           onClick={handleCopy}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-ink-800/80 hover:bg-ink-700/80 text-ink-200 hover:text-white transition-colors duration-150 text-[11px] font-sans font-medium focus:outline-none"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#2a2a2a] hover:bg-[#333333] text-ink-200 hover:text-white transition-colors duration-150 text-[11px] font-sans font-medium focus:outline-none"
           title="Copy code to clipboard"
         >
           {copied ? (
@@ -182,11 +248,20 @@ function NotionCodeBlock({ block }) {
           )}
         </button>
       </div>
-      <pre className="p-4 sm:p-5 overflow-x-auto text-cream leading-relaxed text-[13px] sm:text-sm whitespace-pre">
-        <code>{codeText}</code>
-      </pre>
+
+      {/* Code Content with Horizontal & Vertical Sliders (Max height + Max width) */}
+      <div className="notion-code-scroll w-full">
+        <pre className="p-4 sm:p-5 text-[#e6edf3] leading-relaxed text-[13px] sm:text-sm whitespace-pre font-mono m-0">
+          <code
+            className={`language-${lang}`}
+            dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+          />
+        </pre>
+      </div>
+
+      {/* Optional Caption */}
       {caption && (
-        <div className="bg-ink-900/40 px-4 py-2 text-xs text-ink-400 italic font-sans border-t border-ink-800/60">
+        <div className="bg-[#202020]/70 px-4 py-2 text-xs text-ink-400 italic font-sans border-t border-[#2d2d2d]">
           {caption}
         </div>
       )}
@@ -242,10 +317,24 @@ function NotionTableBlock({ block }) {
 }
 
 // Notion Official Database View Block (List View and Table View switcher)
-function NotionDatabaseViewBlock({ block, categorySlug }) {
+function NotionDatabaseViewBlock({ block, categorySlug, parentSlug }) {
   const [viewMode, setViewMode] = useState("list"); // "list" | "table"
   const title = block.child_database?.title || "Database";
   const items = block.child_database?.items || [];
+
+  const cleanParent = parentSlug ? String(parentSlug).replace(/^\/+|\/+$/g, "") : "";
+  const baseCategory = categorySlug ? String(categorySlug).replace(/^\/+|\/+$/g, "") : "post";
+
+  const getItemUrl = (item) => {
+    // Keep category consistent with current parent article category (or fallback to item category / post)
+    const itemCat = baseCategory && baseCategory !== "post" ? baseCategory : (item.categorySlug || "post");
+    const rawSlug = item.slug || item.title || item.id;
+    const itemSlug = slugify(rawSlug) || item.id;
+    if (cleanParent) {
+      return `/${itemCat}/${cleanParent}/${itemSlug}`;
+    }
+    return `/${itemCat}/${itemSlug}`;
+  };
 
   return (
     <div className="notion-database-view my-8 rounded-2xl border border-ink-200/80 bg-white overflow-hidden shadow-sm">
@@ -299,8 +388,7 @@ function NotionDatabaseViewBlock({ block, categorySlug }) {
         /* Notion List View */
         <div className="divide-y divide-ink-100">
           {items.map((item) => {
-            const itemCat = item.categorySlug || categorySlug || "post";
-            const itemUrl = `/${itemCat}/${item.slug}`;
+            const itemUrl = getItemUrl(item);
 
             return (
               <div
@@ -353,8 +441,7 @@ function NotionDatabaseViewBlock({ block, categorySlug }) {
             </thead>
             <tbody className="divide-y divide-ink-100">
               {items.map((item) => {
-                const itemCat = item.categorySlug || categorySlug || "post";
-                const itemUrl = `/${itemCat}/${item.slug}`;
+                const itemUrl = getItemUrl(item);
 
                 return (
                   <tr

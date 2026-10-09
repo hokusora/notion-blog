@@ -300,11 +300,13 @@ export const CACHE_TTL_MS = isDev ? 0 : 30 * 60 * 1000;
 const blockChildrenCache = new Map();
 const articleCache = new Map();
 const pageMetadataCache = new Map();
+const resolvedDataSourceCache = new Map();
 
 export function clearNotionCaches() {
   blockChildrenCache.clear();
   articleCache.clear();
   pageMetadataCache.clear();
+  resolvedDataSourceCache.clear();
 }
 
 // Enrich child_page blocks with dedicated cover thumbnails, icons, and slugs
@@ -420,25 +422,59 @@ export async function getBlockChildren(notion, blockId, currentDepth = 0, maxDep
     if (currentDepth < maxDepth) {
       await Promise.all(
         allBlocks.map(async (b) => {
-          if (b.type === "child_database") {
+          const isChildDb = b.type === "child_database";
+          const isLinkedDb = b.type === "link_to_page" && (b.link_to_page?.type === "database_id" || b.link_to_page?.database_id);
+          if (isChildDb || isLinkedDb) {
             try {
-              const dbRes = await queryNotionDatabase(notion, b.id);
-              const items = (dbRes?.results || []).map((page) => {
-                const mapped = mapNotionPageToArticle(page);
-                return {
-                  id: page.id,
-                  title: mapped.fields.title,
-                  slug: mapped.fields.slug,
-                  category: mapped.fields.category?.fields?.title || "",
-                  categorySlug: mapped.fields.category?.fields?.slug || "",
-                  date: mapped.fields.date,
-                  tags: mapped.fields.tags || [],
-                  cover: mapped.fields.coverImage?.fields?.file?.url || null,
-                  excerpt: mapped.fields.excerpt || "",
-                };
-              });
-              if (!b.child_database) b.child_database = {};
-              b.child_database.items = items;
+              const rootDbId = getDatabaseId();
+              const rawDbId = isChildDb ? b.id : (b.link_to_page?.database_id || b.id);
+              const cleanChildDbId = parseNotionId(rawDbId);
+              // CRITICAL: Ensure we do NOT query the core root blog database when rendering an inline child database
+              if (cleanChildDbId && cleanChildDbId !== rootDbId) {
+                const dbRes = await queryNotionDatabase(notion, cleanChildDbId);
+                const items = (dbRes?.results || []).map((page) => {
+                  const props = page.properties || {};
+                  // Dynamically extract the title property regardless of column name
+                  const titleProp = Object.values(props).find((p) => p.type === "title");
+                  const title = titleProp?.title?.map((t) => t.plain_text).join("").trim() || "Untitled";
+
+                  // Extract slug if present
+                  const slugProp = props.Slug || props.slug;
+                  const slugText = slugProp?.rich_text?.map((t) => t.plain_text).join("").trim() || slugify(title);
+
+                  // Extract category if present
+                  const catProp = props.Category || props.category || props.Tags || props.tags;
+                  const catName = catProp?.select?.name || catProp?.multi_select?.[0]?.name || "";
+
+                  // Extract date if present
+                  const dateProp = props.Date || props.date || props["Published Date"] || props.Created || props.created;
+                  const dateVal = dateProp?.date?.start || page.created_time || "";
+
+                  // Extract all multi_select tags if present
+                  const tagsProp = Object.values(props).find((p) => p.type === "multi_select");
+                  const tags = tagsProp?.multi_select?.map((t) => t.name) || [];
+
+                  // Extract cover if present
+                  const cover = page.cover?.external?.url || page.cover?.file?.url || null;
+
+                  return {
+                    id: page.id,
+                    title,
+                    slug: slugText,
+                    category: catName,
+                    categorySlug: slugify(catName) || "",
+                    date: dateVal,
+                    tags,
+                    cover,
+                    properties: props,
+                  };
+                });
+                if (!b.child_database) b.child_database = {};
+                b.child_database.items = items;
+              } else {
+                if (!b.child_database) b.child_database = {};
+                b.child_database.items = [];
+              }
             } catch (dbErr) {
               console.warn(`Could not query child_database ${b.id}:`, dbErr.message);
               if (!b.child_database) b.child_database = {};
@@ -537,14 +573,14 @@ export async function getPageMarkdown(pageId, preloadedBlocks = null) {
   }
 }
 
-// Cached resolved data source ID to avoid redundant lookups
-let cachedDataSourceId = null;
-
-// Resolve any Notion database ID, page ID, or workspace data source ID to a valid queryable data_source_id
+// Resolve a Notion database ID, page ID, or workspace data source ID to a queryable data_source_id
 export async function resolveDataSourceId(notion, rawId) {
-  if (cachedDataSourceId) return cachedDataSourceId;
-
   const cleanId = parseNotionId(rawId);
+  if (!cleanId || !notion) return null;
+
+  if (resolvedDataSourceCache.has(cleanId)) {
+    return resolvedDataSourceCache.get(cleanId);
+  }
 
   // 1. Search for available data sources shared with this integration (Notion API 2025-09-03)
   if (typeof notion.search === "function") {
@@ -555,23 +591,24 @@ export async function resolveDataSourceId(notion, rawId) {
       const dataSources = searchRes?.results || [];
 
       if (dataSources.length > 0) {
-        if (cleanId) {
-          const match = dataSources.find((ds) => {
-            const dsId = parseNotionId(ds.id);
-            const parentDbId = parseNotionId(ds.parent?.database_id);
-            const parentPageId = parseNotionId(ds.database_parent?.page_id);
-            return cleanId === dsId || cleanId === parentDbId || cleanId === parentPageId;
-          });
-          if (match?.id) {
-            cachedDataSourceId = parseNotionId(match.id);
-            return cachedDataSourceId;
-          }
+        const match = dataSources.find((ds) => {
+          const dsId = parseNotionId(ds.id);
+          const parentDbId = parseNotionId(ds.parent?.database_id);
+          const parentPageId = parseNotionId(ds.database_parent?.page_id);
+          return cleanId === dsId || cleanId === parentDbId || cleanId === parentPageId;
+        });
+        if (match?.id) {
+          const matchedId = parseNotionId(match.id);
+          resolvedDataSourceCache.set(cleanId, matchedId);
+          return matchedId;
         }
 
-        // If no explicit match but only 1 data source exists in integration, use it
-        if (dataSources[0]?.id) {
-          cachedDataSourceId = parseNotionId(dataSources[0].id);
-          return cachedDataSourceId;
+        // Only fall back to dataSources[0] if this was the root database from env and no other ID was found
+        const rootDbId = getDatabaseId();
+        if (cleanId === rootDbId && dataSources[0]?.id) {
+          const matchedId = parseNotionId(dataSources[0].id);
+          resolvedDataSourceCache.set(cleanId, matchedId);
+          return matchedId;
         }
       }
     } catch {
@@ -579,16 +616,15 @@ export async function resolveDataSourceId(notion, rawId) {
     }
   }
 
-  if (!cleanId) return null;
-
-  // 2. If cleanId is already a database, retrieve it to get its primary data source ID
+  // 2. If cleanId is already a database, retrieve it to check if it has a primary data_source ID
   if (typeof notion.databases?.retrieve === "function") {
     try {
       const dbInfo = await notion.databases.retrieve({ database_id: cleanId });
       if (dbInfo?.data_sources && Array.isArray(dbInfo.data_sources) && dbInfo.data_sources.length > 0) {
         if (dbInfo.data_sources[0]?.id) {
-          cachedDataSourceId = parseNotionId(dbInfo.data_sources[0].id) || cleanId;
-          return cachedDataSourceId;
+          const dsId = parseNotionId(dbInfo.data_sources[0].id) || cleanId;
+          resolvedDataSourceCache.set(cleanId, dsId);
+          return dsId;
         }
       }
     } catch {
@@ -603,66 +639,76 @@ export async function resolveDataSourceId(notion, rawId) {
       const childDb = blocks?.results?.find((b) => b.type === "child_database");
       if (childDb?.id) {
         const childDbId = parseNotionId(childDb.id);
-        if (typeof notion.databases?.retrieve === "function") {
-          try {
-            const dbInfo = await notion.databases.retrieve({ database_id: childDbId });
-            if (dbInfo?.data_sources?.[0]?.id) {
-              cachedDataSourceId = parseNotionId(dbInfo.data_sources[0].id) || childDbId;
-              return cachedDataSourceId;
-            }
-          } catch {
-            // Use childDbId directly
-          }
-        }
-        cachedDataSourceId = childDbId;
-        return cachedDataSourceId;
+        resolvedDataSourceCache.set(cleanId, childDbId);
+        return childDbId;
       }
     } catch {
       // Continue with cleanId
     }
   }
 
-  cachedDataSourceId = cleanId;
+  resolvedDataSourceCache.set(cleanId, cleanId);
   return cleanId;
 }
 
 // Universal database query helper supporting @notionhq/client v5+ (dataSources/request) and older versions
 export async function queryNotionDatabase(notion, rawDatabaseId, { filter, sorts } = {}) {
-  const dataSourceId = await resolveDataSourceId(notion, rawDatabaseId);
-  if (!dataSourceId) {
-    throw new Error(`Unable to resolve Notion database or data source for ID: ${rawDatabaseId}`);
+  const cleanId = parseNotionId(rawDatabaseId);
+  if (!cleanId || !notion) {
+    throw new Error(`Unable to resolve Notion database for ID: ${rawDatabaseId}`);
   }
 
-  // 1. Try notion.dataSources?.query (Notion SDK v5+ / API 2025-09-03)
-  if (typeof notion.dataSources?.query === "function") {
-    const args = { data_source_id: dataSourceId };
-    if (filter) args.filter = filter;
-    if (sorts) args.sorts = sorts;
-    return await notion.dataSources.query(args);
+  // 1. Direct database query via standard SDK (works directly for database IDs)
+  if (typeof notion.databases?.query === "function") {
+    try {
+      const args = { database_id: cleanId };
+      if (filter) args.filter = filter;
+      if (sorts) args.sorts = sorts;
+      return await notion.databases.query(args);
+    } catch {
+      // If direct databases.query fails (e.g. data_source required in SDK v5+), proceed to data_source resolution
+    }
   }
 
-  // 2. Fallback using notion.request for REST API compatibility (uses data_sources endpoint)
-  if (typeof notion.request === "function") {
-    const body = {};
-    if (filter) body.filter = filter;
-    if (sorts) body.sorts = sorts;
+  // 2. Resolve data source ID specifically for this database
+  const dataSourceId = await resolveDataSourceId(notion, cleanId);
+  if (dataSourceId) {
+    if (typeof notion.dataSources?.query === "function") {
+      try {
+        const args = { data_source_id: dataSourceId };
+        if (filter) args.filter = filter;
+        if (sorts) args.sorts = sorts;
+        return await notion.dataSources.query(args);
+      } catch (_dsErr) {
+        void _dsErr;
+      }
+    }
 
-    return await notion.request({
-      path: `data_sources/${dataSourceId}/query`,
-      method: "post",
-      body: Object.keys(body).length > 0 ? body : undefined,
-    });
+    if (typeof notion.request === "function") {
+      try {
+        const body = {};
+        if (filter) body.filter = filter;
+        if (sorts) body.sorts = sorts;
+        return await notion.request({
+          path: `data_sources/${dataSourceId}/query`,
+          method: "post",
+          body: Object.keys(body).length > 0 ? body : undefined,
+        });
+      } catch (_reqErr) {
+        void _reqErr;
+      }
+    }
   }
 
   // 3. Fallback for legacy SDK
   if (typeof notion.databases?.query === "function") {
-    const args = { database_id: dataSourceId };
+    const args = { database_id: cleanId };
     if (filter) args.filter = filter;
     if (sorts) args.sorts = sorts;
     return await notion.databases.query(args);
   }
 
-  throw new Error("No compatible query method available on Notion client");
+  throw new Error(`No compatible query method available for database ${cleanId}`);
 }
 
 // Query Notion database for published articles with fallback
@@ -725,6 +771,24 @@ export async function getNotionArticles(categorySlug = null, options = {}) {
   }
 }
 
+// Helper to recursively collect all blocks matching a predicate across block hierarchy
+export function collectAllBlocks(blocks, predicate) {
+  const found = [];
+  function walk(list) {
+    if (!Array.isArray(list)) return;
+    for (const b of list) {
+      if (predicate(b)) {
+        found.push(b);
+      }
+      if (b.children && Array.isArray(b.children)) {
+        walk(b.children);
+      }
+    }
+  }
+  walk(blocks);
+  return found;
+}
+
 // Get single article or nested child page by slug path including full page blocks & content
 export async function getNotionArticleBySlug(slugOrPath, options = {}) {
   if (!slugOrPath) return null;
@@ -779,6 +843,53 @@ export async function getNotionArticleBySlug(slugOrPath, options = {}) {
           parseNotionId(p.id) === parseNotionId(rootSlug)
         );
       });
+    }
+
+    if (!rootPage) {
+      // Direct Notion page lookup (handles direct navigation to database items or sub-pages)
+      const cleanPossibleId = parseNotionId(rootSlug);
+      let directPage = null;
+
+      if (cleanPossibleId && cleanPossibleId.length >= 32) {
+        try {
+          directPage = await notion.pages.retrieve({ page_id: cleanPossibleId });
+        } catch (_idErr) {
+          void _idErr;
+        }
+      }
+
+      if (!directPage && typeof notion.search === "function") {
+        try {
+          const searchRes = await notion.search({
+            query: rootSlug.replace(/-/g, " "),
+            filter: { value: "page", property: "object" },
+            page_size: 15,
+          });
+          directPage = (searchRes?.results || []).find((p) => {
+            const props = p.properties || {};
+            const titleProp = Object.values(props).find((pr) => pr.type === "title");
+            const t = titleProp?.title?.map((x) => x.plain_text).join("").trim() || "";
+            const slugProp = props.Slug || props.slug || Object.entries(props).find(([k]) => k.toLowerCase() === "slug")?.[1];
+            const s = slugProp?.rich_text?.map((x) => x.plain_text).join("").trim() || slugify(t);
+            const cleanPId = parseNotionId(p.id);
+            return (
+              slugsMatch(s, rootSlug) ||
+              slugsMatch(t, rootSlug) ||
+              slugsMatch(slugify(t), rootSlug) ||
+              p.id === rootSlug ||
+              (cleanPId && cleanPossibleId && cleanPId === cleanPossibleId) ||
+              s.includes(slugify(rootSlug)) ||
+              slugify(rootSlug).includes(s)
+            );
+          });
+        } catch (_sErr) {
+          void _sErr;
+        }
+      }
+
+      if (directPage) {
+        rootPage = directPage;
+      }
     }
 
     if (!rootPage) {
@@ -851,14 +962,15 @@ export async function getNotionArticleBySlug(slugOrPath, options = {}) {
     for (let i = 1; i < segments.length; i++) {
       const targetSegment = segments[i];
 
-      // Inspect currentBlocks for a child_page block matching targetSegment (supports multiple siblings, CJK, IDs)
-      const matchingChildPageBlock = currentBlocks.find((b) => {
-        if (b.type !== "child_page" || !b.child_page?.title) return false;
+      // 1. Inspect all child_page blocks in currentBlocks (including nested inside toggles/columns)
+      const childPageBlocks = collectAllBlocks(currentBlocks, (b) => b.type === "child_page" && b.child_page?.title);
+      const matchingChildPageBlock = childPageBlocks.find((b) => {
         const pageTitle = b.child_page.title;
         const pageSlug = slugify(pageTitle);
         return (
           slugsMatch(pageSlug, targetSegment) ||
           slugsMatch(pageTitle, targetSegment) ||
+          slugsMatch(slugify(pageTitle), targetSegment) ||
           b.id === targetSegment ||
           parseNotionId(b.id) === parseNotionId(targetSegment) ||
           pageSlug.includes(slugify(targetSegment)) ||
@@ -866,15 +978,156 @@ export async function getNotionArticleBySlug(slugOrPath, options = {}) {
         );
       });
 
-      if (!matchingChildPageBlock) {
+      let nextBlockId = matchingChildPageBlock ? matchingChildPageBlock.id : null;
+      let nextTitle = matchingChildPageBlock ? matchingChildPageBlock.child_page?.title : null;
+
+      // 2. If not found in child_page blocks, inspect all database blocks (inline & linked) recursively
+      if (!nextBlockId) {
+        const rootDbId = getDatabaseId();
+        const dbBlocks = collectAllBlocks(currentBlocks, (b) =>
+          b.type === "child_database" ||
+          (b.type === "link_to_page" && (b.link_to_page?.type === "database_id" || b.link_to_page?.database_id))
+        );
+
+        // Also fallback to rootBlocks database blocks if not found in currentBlocks
+        if (dbBlocks.length === 0 && currentBlocks !== rootBlocks) {
+          const rootDbBlocks = collectAllBlocks(rootBlocks, (b) =>
+            b.type === "child_database" ||
+            (b.type === "link_to_page" && (b.link_to_page?.type === "database_id" || b.link_to_page?.database_id))
+          );
+          dbBlocks.push(...rootDbBlocks);
+        }
+
+        for (const dbBlock of dbBlocks) {
+          const isChild = dbBlock.type === "child_database";
+          const rawDbId = isChild ? dbBlock.id : (dbBlock.link_to_page?.database_id || dbBlock.id);
+          const cleanChildDbId = parseNotionId(rawDbId);
+          if (!cleanChildDbId || cleanChildDbId === rootDbId) continue;
+
+          let dbItems = dbBlock.child_database?.items;
+          // Dynamically load items if not yet preloaded or empty
+          if (!dbItems || dbItems.length === 0) {
+            try {
+              const dbRes = await queryNotionDatabase(notion, cleanChildDbId);
+              dbItems = (dbRes?.results || []).map((page) => {
+                const props = page.properties || {};
+                const titleProp = Object.values(props).find((p) => p.type === "title");
+                const t = titleProp?.title?.map((x) => x.plain_text).join("").trim() || "Untitled";
+                const slugProp = props.Slug || props.slug || Object.entries(props).find(([k]) => k.toLowerCase() === "slug")?.[1];
+                const s = slugProp?.rich_text?.map((x) => x.plain_text).join("").trim() || slugify(t);
+                const catProp = props.Category || props.category || props.Tags || props.tags;
+                const catName = catProp?.select?.name || catProp?.multi_select?.[0]?.name || "";
+                return {
+                  id: page.id,
+                  title: t,
+                  slug: s,
+                  category: catName,
+                  categorySlug: slugify(catName) || "",
+                  properties: props,
+                };
+              });
+              if (!dbBlock.child_database) dbBlock.child_database = {};
+              dbBlock.child_database.items = dbItems;
+            } catch (_dbErr) {
+              console.warn(`Could not query database ${cleanChildDbId}:`, _dbErr.message);
+              dbItems = [];
+            }
+          }
+
+          const matchedItem = dbItems.find((item) => {
+            const itemTitle = item.title || "";
+            const itemSlug = item.slug || slugify(itemTitle);
+            const cleanItemId = parseNotionId(item.id);
+            const cleanTarget = parseNotionId(targetSegment);
+            return (
+              slugsMatch(itemSlug, targetSegment) ||
+              slugsMatch(itemTitle, targetSegment) ||
+              slugsMatch(slugify(itemTitle), targetSegment) ||
+              item.id === targetSegment ||
+              (cleanItemId && cleanTarget && cleanItemId === cleanTarget) ||
+              itemSlug.includes(slugify(targetSegment)) ||
+              slugify(targetSegment).includes(itemSlug) ||
+              (cleanItemId && targetSegment.includes(cleanItemId)) ||
+              (cleanItemId && targetSegment.endsWith(cleanItemId.replace(/-/g, "")))
+            );
+          });
+
+          if (matchedItem) {
+            nextBlockId = matchedItem.id;
+            nextTitle = matchedItem.title;
+            break;
+          }
+        }
+      }
+
+      // 3. Fallback: Direct Notion Page retrieval if targetSegment contains a UUID
+      if (!nextBlockId) {
+        const cleanTargetId = parseNotionId(targetSegment);
+        if (cleanTargetId && cleanTargetId.length >= 32) {
+          try {
+            const directPage = await notion.pages.retrieve({ page_id: cleanTargetId });
+            if (directPage?.id) {
+              nextBlockId = directPage.id;
+              const props = directPage.properties || {};
+              const titleProp = Object.values(props).find((p) => p.type === "title");
+              nextTitle = titleProp?.title?.map((x) => x.plain_text).join("").trim() || targetSegment;
+            }
+          } catch (_dpErr) {
+            void _dpErr;
+          }
+        }
+      }
+
+      // 4. Fallback: Search workspace for matching sub-page in Notion
+      if (!nextBlockId && typeof notion.search === "function") {
+        try {
+          const queryText = targetSegment.replace(/[-_]+/g, " ").trim();
+          if (queryText) {
+            const searchRes = await notion.search({
+              query: queryText,
+              filter: { value: "page", property: "object" },
+              page_size: 20,
+            });
+            const candidates = searchRes?.results || [];
+            const found = candidates.find((p) => {
+              const props = p.properties || {};
+              const titleProp = Object.values(props).find((pr) => pr.type === "title");
+              const t = titleProp?.title?.map((x) => x.plain_text).join("").trim() || "";
+              const slugProp = props.Slug || props.slug || Object.entries(props).find(([k]) => k.toLowerCase() === "slug")?.[1];
+              const s = slugProp?.rich_text?.[0]?.plain_text || slugify(t);
+              const cleanPId = parseNotionId(p.id);
+              const cleanTId = parseNotionId(targetSegment);
+              return (
+                slugsMatch(s, targetSegment) ||
+                slugsMatch(t, targetSegment) ||
+                slugsMatch(slugify(t), targetSegment) ||
+                p.id === targetSegment ||
+                (cleanPId && cleanTId && cleanPId === cleanTId) ||
+                s.includes(slugify(targetSegment)) ||
+                slugify(targetSegment).includes(s)
+              );
+            });
+            if (found?.id) {
+              nextBlockId = found.id;
+              const props = found.properties || {};
+              const titleProp = Object.values(props).find((pr) => pr.type === "title");
+              nextTitle = titleProp?.title?.map((x) => x.plain_text).join("").trim() || targetSegment;
+            }
+          }
+        } catch (_sErr) {
+          void _sErr;
+        }
+      }
+
+      if (!nextBlockId) {
         // Fallback to mock data if path exists in mocks
         const mockFallback = findMockArticleByPath(cleanPath);
         if (mockFallback) return mockFallback;
         return null;
       }
 
-      currentBlockId = matchingChildPageBlock.id;
-      currentTitle = matchingChildPageBlock.child_page.title;
+      currentBlockId = nextBlockId;
+      currentTitle = nextTitle || currentTitle;
       accumulatedPath += `/${slugify(currentTitle) || targetSegment}`;
       breadcrumbs.push({
         title: currentTitle,
@@ -886,7 +1139,7 @@ export async function getNotionArticleBySlug(slugOrPath, options = {}) {
       currentBlocks = await enrichChildPageBlocks(notion, currentBlocks);
     }
 
-    // 1. Retrieve the native Notion child page object to access page.cover and page.icon
+    // 1. Retrieve the native Notion child page object to access page.cover, page.icon, and dynamic properties
     let childPageObj = null;
     try {
       if (typeof notion.pages?.retrieve === "function") {
@@ -895,6 +1148,25 @@ export async function getNotionArticleBySlug(slugOrPath, options = {}) {
     } catch (retrieveErr) {
       console.warn(`Could not retrieve native child page object ${currentBlockId}:`, retrieveErr.message || retrieveErr);
     }
+
+    // Dynamic title from child page properties if available
+    const childProps = childPageObj?.properties || {};
+    const titleProp = Object.values(childProps).find((p) => p.type === "title");
+    const extractedTitle = titleProp?.title?.map((t) => t.plain_text).join("").trim();
+    if (extractedTitle) {
+      currentTitle = extractedTitle;
+      if (breadcrumbs.length > 0) {
+        breadcrumbs[breadcrumbs.length - 1].title = currentTitle;
+      }
+    }
+
+    const childTags =
+      childProps.Tags?.multi_select?.map((t) => t.name) ||
+      (childProps.Tags?.select?.name ? [childProps.Tags.select.name] : (rootArticle.fields.tags || []));
+    const dateProp = childProps.Date || childProps.date || childProps["Published Date"];
+    const childDate =
+      dateProp?.date?.start ||
+      (childPageObj?.created_time ? childPageObj.created_time.split("T")[0] : rootArticle.fields.date);
 
     // 2. Extract dedicated sub-page cover: page.cover (external or file S3 presigned URL)
     const nativeCoverUrl =
@@ -927,8 +1199,6 @@ export async function getNotionArticleBySlug(slugOrPath, options = {}) {
     const leafMarkdown = await getPageMarkdown(currentBlockId, currentBlocks);
 
     // 6. Build synthesized article schema for child page.
-    // Crucial: do NOT inherit parent's cover image! If finalSubPageCoverUrl is null, coverImage is null.
-    // However, typography (font) and text color should be inherited from parent if not explicitly overridden on the sub-page.
     const childFontClass = childPageObj?.properties
       ? extractFontClass(childPageObj.properties)
       : "font-default";
@@ -963,8 +1233,8 @@ export async function getNotionArticleBySlug(slugOrPath, options = {}) {
             .replace(/\s+/g, " ")
             .trim()
             .slice(0, 160) + "...",
-        date: childPageObj?.created_time ? childPageObj.created_time.split("T")[0] : rootArticle.fields.date,
-        tags: rootArticle.fields.tags,
+        date: childDate,
+        tags: childTags,
         coverImage: finalSubPageCoverUrl
           ? {
               fields: {

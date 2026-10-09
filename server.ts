@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import postsHandler from "./api/posts.js";
 import postHandler from "./api/post.js";
 import categoriesHandler from "./api/categories.js";
+import verifyPasscodeHandler from "./api/verify-passcode.js";
 
 async function startServer() {
   const app = express();
@@ -17,6 +18,10 @@ async function startServer() {
   });
 
   // API routes
+  app.post("/api/verify-passcode", (req, res) => {
+    verifyPasscodeHandler(req, res);
+  });
+
   app.get("/api/posts", (req, res) => {
     postsHandler(req, res);
   });

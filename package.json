@@ -15,6 +15,7 @@
     "esbuild": "^0.28.2",
     "express": "^5.2.1",
     "notion-to-md": "^3.1.9",
+    "prismjs": "^1.30.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-markdown": "^10.1.0",
