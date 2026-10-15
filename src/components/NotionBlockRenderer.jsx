@@ -506,6 +506,7 @@ export default function NotionBlockRenderer({
   blocks = [],
   categorySlug = "",
   parentSlug = "",
+  onImageClick = null,
 }) {
   if (!blocks || !Array.isArray(blocks) || blocks.length === 0) {
     return null;
@@ -586,6 +587,7 @@ export default function NotionBlockRenderer({
                         blocks={b.children}
                         categorySlug={categorySlug}
                         parentSlug={parentSlug}
+                        onImageClick={onImageClick}
                       />
                     </div>
                   )}
@@ -611,6 +613,7 @@ export default function NotionBlockRenderer({
                         blocks={b.children}
                         categorySlug={categorySlug}
                         parentSlug={parentSlug}
+                        onImageClick={onImageClick}
                       />
                     </div>
                   )}
@@ -647,6 +650,7 @@ export default function NotionBlockRenderer({
                           blocks={b.children}
                           categorySlug={categorySlug}
                           parentSlug={parentSlug}
+                          onImageClick={onImageClick}
                         />
                       </div>
                     )}
@@ -782,6 +786,7 @@ export default function NotionBlockRenderer({
                       blocks={block.children}
                       categorySlug={categorySlug}
                       parentSlug={parentSlug}
+                      onImageClick={onImageClick}
                     />
                   </div>
                 )}
@@ -802,6 +807,7 @@ export default function NotionBlockRenderer({
                       blocks={block.children}
                       categorySlug={categorySlug}
                       parentSlug={parentSlug}
+                      onImageClick={onImageClick}
                     />
                   </div>
                 )}
@@ -833,6 +839,7 @@ export default function NotionBlockRenderer({
                         blocks={block.children}
                         categorySlug={categorySlug}
                         parentSlug={parentSlug}
+                        onImageClick={onImageClick}
                       />
                     </div>
                   )}
@@ -883,6 +890,7 @@ export default function NotionBlockRenderer({
                       blocks={block.children}
                       categorySlug={categorySlug}
                       parentSlug={parentSlug}
+                      onImageClick={onImageClick}
                     />
                   </div>
                 )}
@@ -896,7 +904,7 @@ export default function NotionBlockRenderer({
             );
           }
 
-          // STRICTLY INLINE IMAGE BLOCK
+          // STRICTLY INLINE IMAGE BLOCK WITH LIGHTBOX TRIGGER
           case "image": {
             const imgData = block.image;
             const url = imgData?.file?.url || imgData?.external?.url || "";
@@ -904,13 +912,34 @@ export default function NotionBlockRenderer({
             const caption =
               imgData.caption?.map((c) => c.plain_text || c.text?.content || "").join("") || "";
             return (
-              <figure key={blockId} className="my-8 w-full flex flex-col items-center">
-                <img
-                  src={url}
-                  alt={caption || "Post media"}
-                  loading="lazy"
-                  className="w-full max-h-[650px] object-contain rounded-2xl shadow-sm border border-pink-100/50"
-                />
+              <figure key={blockId} className="my-8 w-full flex flex-col items-center group">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onImageClick?.(url, caption)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onImageClick?.(url, caption);
+                    }
+                  }}
+                  className="relative overflow-hidden rounded-2xl shadow-sm border border-pink-100/50 cursor-zoom-in hover:shadow-lg transition-all duration-200 group/img focus:outline-none focus:ring-2 focus:ring-pink-400"
+                  title="Click to view in fullscreen gallery"
+                >
+                  <img
+                    src={url}
+                    alt={caption || "Post media"}
+                    loading="lazy"
+                    className="w-full max-h-[650px] object-contain transition-transform duration-300 group-hover/img:scale-[1.015]"
+                  />
+                  {/* Subtle hover badge */}
+                  <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[11px] font-medium px-2.5 py-1 rounded-lg opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center gap-1.5 pointer-events-none shadow-md">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                    <span>View Gallery</span>
+                  </div>
+                </div>
                 {caption && (
                   <figcaption className="mt-2.5 text-center text-xs text-ink-500 font-sans italic max-w-xl">
                     {caption}

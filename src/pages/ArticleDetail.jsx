@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import Markdown from "react-markdown";
 import { getArticleBySlug } from "../services/notion";
@@ -6,6 +6,7 @@ import ReadingProgressBar from "../components/ReadingProgressBar";
 import TableOfContents from "../components/TableOfContents";
 import NotionBlockRenderer from "../components/NotionBlockRenderer";
 import SubPageCard from "../components/SubPageCard";
+import ImageLightboxModal from "../components/ImageLightboxModal";
 import { slugifyHeading } from "../utils/slugify";
 
 // Helper to extract text from React children tree
@@ -82,6 +83,91 @@ const ArticleDetail = () => {
     fetchArticle();
   }, [fullPath]);
 
+  // Aggregate all images from cover, Notion blocks, and markdown content into a sequential gallery
+  const post = article?.fields || {};
+  const { title, coverImage, content, blocks, date, tags, parentSlug, parentTitle } = post;
+  const fontClass = post.fontClass || post.Font || post.font || "font-default";
+  const textColor = post.textColor || post.TextColor || post.text_color || post.Color || post.color || "#30a6a6";
+
+  let imageUrl = coverImage?.fields?.file?.url || (typeof coverImage === "string" ? coverImage : null);
+  if (!imageUrl && Array.isArray(blocks)) {
+    const firstImgBlock = blocks.find((b) => b.type === "image");
+    if (firstImgBlock?.image) {
+      imageUrl = firstImgBlock.image.file?.url || firstImgBlock.image.external?.url || null;
+    }
+  }
+
+  const galleryImages = useMemo(() => {
+    if (!article) return [];
+    const list = [];
+    const seenUrls = new Set();
+
+    const addImg = (src, caption = "", alt = "") => {
+      if (!src || typeof src !== "string") return;
+      const clean = src.trim();
+      if (!clean || seenUrls.has(clean)) return;
+      seenUrls.add(clean);
+      list.push({
+        id: `img-${list.length}`,
+        src: clean,
+        caption: caption || alt || "",
+        alt: alt || caption || `Image ${list.length + 1}`,
+      });
+    };
+
+    // 1. Primary Cover / Hero Image
+    if (imageUrl) {
+      addImg(imageUrl, `${title || "Article"} (Cover Photo)`, title);
+    }
+
+    // 2. Notion Blocks (traverse recursively)
+    if (Array.isArray(blocks)) {
+      const walkBlocks = (arr) => {
+        for (const b of arr) {
+          if (b.type === "image") {
+            const u = b.image?.file?.url || b.image?.external?.url;
+            const cap =
+              b.image?.caption?.map((c) => c.plain_text || c.text?.content || "").join("") || "";
+            if (u) addImg(u, cap);
+          }
+          if (b.children && Array.isArray(b.children)) {
+            walkBlocks(b.children);
+          }
+        }
+      };
+      walkBlocks(blocks);
+    }
+
+    // 3. Markdown content (if any inline image URLs)
+    if (typeof content === "string") {
+      const mdImgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+      let match;
+      while ((match = mdImgRegex.exec(content)) !== null) {
+        addImg(match[2], match[1]);
+      }
+
+      const mdLinkRegex = /\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+      while ((match = mdLinkRegex.exec(content)) !== null) {
+        if (isImageUrl(match[2])) {
+          addImg(match[2], match[1]);
+        }
+      }
+    }
+
+    return list;
+  }, [article, imageUrl, title, blocks, content]);
+
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const openLightboxAtUrl = (targetUrl) => {
+    if (!targetUrl) return;
+    const clean = targetUrl.trim();
+    const foundIdx = galleryImages.findIndex((img) => img.src === clean);
+    setLightboxIndex(foundIdx !== -1 ? foundIdx : 0);
+    setLightboxOpen(true);
+  };
+
   // ── Loading skeleton ──
   if (loading) {
     return (
@@ -157,22 +243,8 @@ const ArticleDetail = () => {
     );
   }
 
-  // ── Data extraction ──
-  const post = article.fields || {};
-  const { title, coverImage, content, blocks, date, tags, parentSlug, parentTitle } = post;
-  const fontClass = post.fontClass || post.Font || post.font || "font-default";
-  const textColor = post.textColor || post.TextColor || post.text_color || post.Color || post.color || "#30a6a6";
+  // ── Data extraction (already extracted at component root) ──
 
-  // Dedicated sub-page cover or root article cover
-  let imageUrl = coverImage?.fields?.file?.url || (typeof coverImage === "string" ? coverImage : null);
-
-  // If sub-page has no cover set, fall back to first inline image block inside this sub-page (do NOT inherit parent's cover)
-  if (!imageUrl && Array.isArray(blocks)) {
-    const firstImgBlock = blocks.find((b) => b.type === "image");
-    if (firstImgBlock?.image) {
-      imageUrl = firstImgBlock.image.file?.url || firstImgBlock.image.external?.url || null;
-    }
-  }
 
   const currentCategorySlug =
     categorySlug || article.fields.category?.fields?.slug || "general";
@@ -358,13 +430,33 @@ const ArticleDetail = () => {
       if (isImageUrl(href)) {
         const altText = childText || "Post media";
         return (
-          <figure className="my-6 w-full flex flex-col items-center">
-            <img
-              src={href}
-              alt={altText}
-              loading="lazy"
-              className="w-full max-h-[650px] object-contain rounded-2xl shadow-sm border border-pink-100/50"
-            />
+          <figure className="my-6 w-full flex flex-col items-center group">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => openLightboxAtUrl(href, altText)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openLightboxAtUrl(href, altText);
+                }
+              }}
+              className="relative overflow-hidden rounded-2xl shadow-sm border border-pink-100/50 cursor-zoom-in hover:shadow-lg transition-all duration-200 group/img focus:outline-none"
+              title="Click to view in fullscreen gallery"
+            >
+              <img
+                src={href}
+                alt={altText}
+                loading="lazy"
+                className="w-full max-h-[650px] object-contain transition-transform duration-300 group-hover/img:scale-[1.015]"
+              />
+              <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[11px] font-medium px-2.5 py-1 rounded-lg opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center gap-1.5 pointer-events-none shadow-md">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+                <span>View Gallery</span>
+              </div>
+            </div>
             {altText && altText !== "Post media" && (
               <figcaption className="mt-2 text-center text-xs text-ink-500 font-sans italic">
                 {altText}
@@ -411,14 +503,34 @@ const ArticleDetail = () => {
       );
     },
     img: ({ src, alt, ...props }) => (
-      <figure className="my-6 w-full flex flex-col items-center">
-        <img
-          src={src}
-          alt={alt || "Post media"}
-          loading="lazy"
-          className="w-full max-h-[650px] object-contain rounded-2xl shadow-sm border border-pink-100/50"
-          {...props}
-        />
+      <figure className="my-6 w-full flex flex-col items-center group">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => openLightboxAtUrl(src, alt)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openLightboxAtUrl(src, alt);
+            }
+          }}
+          className="relative overflow-hidden rounded-2xl shadow-sm border border-pink-100/50 cursor-zoom-in hover:shadow-lg transition-all duration-200 group/img focus:outline-none"
+          title="Click to view in fullscreen gallery"
+        >
+          <img
+            src={src}
+            alt={alt || "Post media"}
+            loading="lazy"
+            className="w-full max-h-[650px] object-contain transition-transform duration-300 group-hover/img:scale-[1.015]"
+            {...props}
+          />
+          <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[11px] font-medium px-2.5 py-1 rounded-lg opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center gap-1.5 pointer-events-none shadow-md">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+            <span>View Gallery</span>
+          </div>
+        </div>
         {alt && alt !== "Post media" && (
           <figcaption className="mt-2.5 text-center text-xs text-ink-500 font-sans italic max-w-xl">
             {alt}
@@ -589,13 +701,31 @@ const ArticleDetail = () => {
             </h1>
           </header>
 
-          {/* Standalone Hero Banner or Clean Gradient Placeholder (No icon overlay) */}
+          {/* Standalone Hero Banner or Clean Gradient Placeholder with Gallery trigger */}
           {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={title}
-              className="w-full h-64 md:h-96 object-cover rounded-2xl shadow-sm mb-8"
-            />
+            <div className="relative group mb-8 rounded-2xl overflow-hidden shadow-sm">
+              <img
+                src={imageUrl}
+                alt={title}
+                onClick={() => openLightboxAtUrl(imageUrl)}
+                className="w-full h-64 md:h-96 object-cover cursor-zoom-in transition-transform duration-300 group-hover:scale-[1.01]"
+              />
+              {galleryImages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLightboxIndex(0);
+                    setLightboxOpen(true);
+                  }}
+                  className="absolute bottom-4 right-4 bg-black/75 hover:bg-black/90 backdrop-blur-md text-white text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-2 shadow-xl border border-white/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  <svg className="w-4 h-4 text-pink-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  <span>Open Gallery ({galleryImages.length} photos)</span>
+                </button>
+              )}
+            </div>
           ) : (
             <div className="w-full h-48 md:h-64 rounded-2xl shadow-sm mb-8 border border-ink-300/20 bg-gradient-to-br from-mint-500/10 via-pink-500/10 to-indigo-500/10 p-8 flex flex-col items-center justify-center text-center">
               <span className="text-[11px] uppercase tracking-widest font-bold text-mint-700 bg-mint-100/80 px-3 py-1 rounded-full mb-2">
@@ -626,6 +756,7 @@ const ArticleDetail = () => {
                 blocks={blocks}
                 categorySlug={currentCategorySlug}
                 parentSlug={fullPath}
+                onImageClick={(url, cap) => openLightboxAtUrl(url, cap)}
               />
             ) : (
               <Markdown components={markdownComponents}>
@@ -650,6 +781,14 @@ const ArticleDetail = () => {
           <TableOfContents content={content} blocks={blocks} variant="desktop" />
         </aside>
       </div>
+
+      {/* Fullscreen Lightbox Gallery Modal with Thumbnails & Slideshow */}
+      <ImageLightboxModal
+        images={galleryImages}
+        initialIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+      />
     </>
   );
 };

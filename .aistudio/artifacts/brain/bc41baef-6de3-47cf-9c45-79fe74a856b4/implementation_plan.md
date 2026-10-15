@@ -1,128 +1,126 @@
-# Global Password Protection Gate
+# Fullscreen Lightbox Gallery with Vertical Thumbnail Drawer & Autoplay
 
-A secure, session-isolated passkey gateway for the entire application that keeps all Notion CMS queries and child routes locked behind a password verification modal using pure in-memory state.
+An advanced, responsive, high-performance media viewer modeled directly after your reference gallery (e.g. CosplayTele / LightGallery / PhotoSwipe), fully integrated with your Notion CMS images and videos.
 
-## User Review & Critical Decisions
+## User Review & Confirmed Decisions
 
 > [!IMPORTANT]
-> The following architecture choices have been confirmed based on your security and design preferences:
-
-- **Secret Storage & Leak Prevention**: The passcode is stored exclusively in a server-side environment variable (`APP_PASSWORD`) in `.env`, verified via a lightweight `/api/verify-passcode` endpoint on the server. It is **never** bundled into client-side JavaScript or exposed in browser devtools.
-- **Pure In-Memory Root State**: `App.jsx` initializes `const [isUnlocked, setIsUnlocked] = useState(false)`. No `localStorage` or `sessionStorage` is used, guaranteeing that any page reload immediately returns the app to its locked state.
-- **Strict Content & Query Gating**: When `!isUnlocked`, child route rendering and Notion CMS API calls (`/api/posts`, `/api/post`, `/api/categories`) are completely prevented from executing.
-- **Visual Harmony**: The lock screen inherits the exact squarish `rounded-3xl` container, warm pastel gradient (`#fff8dc` → `#ffc0db` → `#ffe3de`), backdrop blur (`bg-black/40 backdrop-blur-sm`), and `#ad103a` typography used by the existing footer modal.
-- **Setup & Update Documentation**: A complete step-by-step guide is included for setting the initial password and updating it at any time in the future.
-
----
-
-## 1. Overview & Core Concept
-
-- **What It Does**: Presents a full-screen, focused password modal on entry. Entering the correct password unlocks the entire blog for the current session. Refreshing the browser instantly resets the lock.
-- **Security Guarantee**: Because the verification runs against a server environment variable endpoint, the actual passcode is never transmitted to the browser bundle, can contain uppercase, lowercase, numbers, and symbols (`-_`), and can be updated anytime in `.env` without client code changes.
-- **Key Value**: Protects private articles and personal notes with zero client-side credential leakage and zero residual storage across refreshes.
+> Based on your design reference and confirmed preferences:
+> - **Accurate Industry Terminology**: This feature is officially known as a **Fullscreen Lightbox Gallery Modal with Thumbnail Drawer, Slideshow Autoplay, and Deep Zoom / Pan** (commonly built with patterns from *PhotoSwipe* or *lightGallery*).
+> - **Full Notion Compatibility**: 100% compatible with Notion image blocks (`file.url` AWS S3 signed URLs and `external.url`) and database media properties.
+> - **Thumbnail Panel Layout**: Implemented as a **collapsible vertical right-hand sidebar drawer** with active item red-border highlight and automatic scroll-into-view, matching the reference screenshot.
+> - **Controls & Toolbar**:
+>   - Index Counter: `[current] / [total]` (e.g., `9 / 95`)
+>   - Deep Zoom & Pan tool with click/pinch scaling
+>   - Autoplay / Slideshow toggle button with play/pause state and configurable timer interval
+>   - Thumbnail drawer toggle button (3x3 grid icon) to show/hide the right thumbnail drawer
+>   - Previous / Next arrow navigation chevrons + keyboard bindings (`ArrowLeft`, `ArrowRight`, `Space` for play/pause, `Escape` to close)
+>   - Fullscreen toggle and Close (`✕`) buttons
 
 ---
 
-## 2. User Experience & Visual Design
+## 1. Overview & Architecture
 
-### Key User Flows
-1. **Initial Visit / Refresh**:
-   - The user opens any URL (e.g. `/`, `/category/korean`, `/post/my-article`).
-   - The root component mounts with `isUnlocked = false`.
-   - Notion API queries and page routes remain suspended.
-   - The user sees a centered frosted card floating above the softly blurred warm pastel backdrop.
-2. **Passcode Input**:
-   - The password field receives `autoFocus` immediately.
-   - As the user types their passcode (supporting letters, numbers, and `-_`), masked bullets appear.
-   - The user can press `Enter` or click the "Unlock" button.
-3. **Verification**:
-   - A brief loading pulse appears on the button.
-   - **On Success**: Smooth fade transition; `isUnlocked` flips to `true`; child routes mount and fetch Notion data.
-   - **On Failure**: A discreet shake animation and quiet error notice (`Incorrect passcode`) appears below the input, input clears and refocuses for the next attempt.
-
-### Visual Styling & Tokens
-- **Backdrop**: `fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-200`
-- **Modal Box**: `w-80 h-80 sm:w-96 sm:h-96 rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-center text-center relative overflow-hidden border border-white/30 backdrop-blur-md`
-- **Background Gradient**: `linear-gradient(to bottom right, #fff8dc, #ffc0db, #ffe3de)`
-- **Header Badge & Label**: `font-korean text-xs uppercase tracking-widest text-[#ad103a]/70 font-semibold italic mb-2`
-- **Title**: `text-xl sm:text-2xl font-bold text-[#ad103a] italic font-korean mb-4`
-- **Input Styling**: Rounded-xl bordered field (`border-white/50 bg-white/70 focus:bg-white focus:border-[#ad103a]/50 text-ink-900 px-4 py-2 text-center text-base tracking-widest font-mono outline-none shadow-inner transition-all`)
-- **Submit Button**: Rounded-xl action button (`bg-[#ad103a] hover:bg-[#8e0c2f] text-white px-5 py-2 font-medium text-sm transition-all shadow-md active:scale-95 cursor-pointer`)
+### How It Works with Notion Content
+1. **Dynamic Media Registry in Articles (`NotionBlockRenderer.jsx` & `ArticleDetail.jsx`)**:
+   - As `NotionBlockRenderer` renders the post's blocks, all `image` blocks (and embedded image URLs) are automatically indexed into a sequential media list:
+     ```js
+     {
+       index: 0,
+       id: "block-id-1",
+       src: "https://prod-files-secure.s3.us-west-2.amazonaws.com/...",
+       alt: "Image caption or post title",
+       caption: "Photo caption text"
+     }
+     ```
+   - Each inline image in the article is wrapped with a responsive, subtle hover zoom effect and click handler: `onClick={() => openLightbox(index)}`.
+2. **Global / Article Lightbox Component (`ImageLightboxModal.jsx`)**:
+   - When opened, it mounts a high-performance modal portal at the `document.body` level.
+   - Prevents background body scrolling (`overflow: hidden`).
+   - Starts directly at the tapped image's index.
+   - Displays the vertical right sidebar containing all post images with their thumbnail previews.
 
 ---
 
-## 3. First-Time Setup & Future Updates Guide
-
-### A. How to Set Your Password for the First Time
-1. Open the `.env` file in the root directory.
-2. Add the variable:
-   ```env
-   APP_PASSWORD=YourPasswordHere_123
-   ```
-3. Your password can contain:
-   - Uppercase & lowercase letters (`A-Z`, `a-z`)
-   - Numbers (`0-9`)
-   - Special characters `-` and `_`
-4. The server also checks `.env.example` as a template reference (`APP_PASSWORD=`).
-5. (Development Default): If `APP_PASSWORD` is not set yet in `.env`, a fallback development password (`dev-pass_123`) is supported so the app works immediately out of the box during testing.
-
-### B. How to Update the Password in the Future
-1. When you want to change your passcode, open `.env`.
-2. Change the value:
-   ```env
-   APP_PASSWORD=NewSecretPasscode_2026
-   ```
-3. Restart or save the server process.
-4. **No Code Rebuilding Needed**: Because verification happens dynamically on the server side, no frontend code rebuild or re-bundling is required. The browser will immediately test entries against your newly set password.
-
----
-
-## 4. Technical Architecture & Data Strategy
+## 2. Visual Design & Layout (Matching Your Reference)
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                         Browser                              │
-│                                                              │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │                    App.jsx (Root)                      │  │
-│  │                                                        │  │
-│  │   isUnlocked === false            isUnlocked === true  │  │
-│  │            │                               │           │  │
-│  │            ▼                               ▼           │  │
-│  │   ┌──────────────────┐           ┌──────────────────┐  │  │
-│  │   │  LockScreenModal │           │  Router & Pages  │  │  │
-│  │   │  (Frosted Glass) │           │  (Home, Article, │  │  │
-│  │   └────────┬─────────┘           │   Category, etc.)│  │  │
-│  │            │                     └────────┬─────────┘  │  │
-│  └────────────┼──────────────────────────────┼────────────┘  │
-│               │ POST /api/verify-passcode    │ GET /api/posts│
-└───────────────┼──────────────────────────────┼───────────────┘
-                ▼                              ▼
-┌──────────────────────────────────────────────────────────────┐
-│                       Express Server                         │
-│                                                              │
-│  ┌──────────────────────────────┐  ┌──────────────────────┐  │
-│  │ /api/verify-passcode         │  │ /api/posts, etc.     │  │
-│  │ Compare req.body.password    │  │ Notion API           │  │
-│  │ with process.env.APP_PASSWORD│  │ Integration          │  │
-│  └──────────────────────────────┘  └──────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 9 / 95                                        [Zoom] [Play] [Grid] [Close]  │
+├─────────────────────────────────────────────────────────────┬───────────────┤
+│                                                             │ ┌───────────┐ │
+│                                                             │ │  Thumb 1  │ │
+│                                                             │ └───────────┘ │
+│    [ < ]                 Main Image                 [ > ]   │ ┌───────────┐ │
+│                                                             │ │  Thumb 2  │ │
+│                                                             │ └───────────┘ │
+│                                                             │ ┏━━━━━━━━━━━┓ │
+│                                                             │ ┃  Active   ┃ │
+│                                                             │ ┗━━━━━━━━━━━┛ │
+│                                                             │ ┌───────────┐ │
+│                                                             │ │  Thumb 4  │ │
+│                                                             │ └───────────┘ │
+├─────────────────────────────────────────────────────────────┴───────────────┤
+│ Optional Caption / Title Bar                                                │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Data Model & State
-- **Root State (`App.jsx`)**:
-  - `isUnlocked` (`boolean`, default: `false`): Governs whether the site view or the lock screen modal is mounted.
-- **Lock Screen State (`LockScreen.jsx`)**:
-  - `password` (`string`): Current input value.
-  - `error` (`string | null`): Displays `"Incorrect passcode"` when validation fails.
-  - `isChecking` (`boolean`): Loading spinner during endpoint submission.
-- **Server Environment Variable**:
-  - `APP_PASSWORD`: User-defined string in `.env`, supporting letters, numbers, and `-_`.
+### UI Features & Elements
+- **Backdrop**: Deep translucent black backdrop (`bg-black/95 backdrop-blur-md`) providing cinematic focus.
+- **Top Control Bar**:
+  - Left: Image position counter (`9 / 95`) in crisp mono font.
+  - Right: Action icon buttons with hover tooltips:
+    - **Zoom**: Toggle between `contain` fit and `1.5x / 2.5x` deep zoom with drag-to-pan.
+    - **Play/Pause**: Toggle 3.5s automated slideshow progression with subtle progress indicator.
+    - **Grid / Drawer Icon**: Toggle visibility of the right-hand thumbnail sidebar drawer for distraction-free view.
+    - **Close**: Quick dismiss with smooth fade-out.
+- **Center Canvas**:
+  - Smooth hardware-accelerated slide transitions (`opacity` and `transform`).
+  - Left / Right chevron buttons with hover highlights.
+  - Keyboard shortcuts: `ArrowLeft`, `ArrowRight`, `Space` (slideshow), `Escape` (close), `+` / `-` (zoom).
+  - Touch swipe gestures for mobile and tablet screens.
+- **Right Sidebar Drawer**:
+  - 2-column or 1-column scrollable thumbnail gallery matching your screenshot.
+  - Current image is highlighted with an active accent border (matching the red/pink border in your screenshot).
+  - Automatically scrolls the active thumbnail into center view when navigating via arrow keys or autoplay.
+  - Clicking any thumbnail instantly jumps the main stage to that photo.
 
-### Verification Sequence Flow
-1. User enters password and presses Enter.
-2. `LockScreen` sends `POST /api/verify-passcode` with `{ password }`.
-3. Server compares the received password with `process.env.APP_PASSWORD`.
-4. If valid, server responds `{ success: true }`.
-5. Frontend sets `isUnlocked(true)`; `LockScreen` unmounts; `Router` mounts and children initiate Notion fetching.
-6. If invalid, server responds `{ success: false, error: "Incorrect passcode" }` with 401 status. Frontend displays error indicator and shakes input.
+---
+
+## 3. Implementation Steps
+
+1. **Create Lightbox Component (`src/components/ImageLightboxModal.jsx`)**:
+   - Implements full state machine:
+     - `currentIndex`
+     - `isPlaying` (interval-based autoplay)
+     - `isZoomed` and `zoomLevel`
+     - `showThumbnails`
+     - `panOffset` for zoomed image exploration
+   - Manages keyboard listeners, body scroll lock, and touch swipe gestures.
+   - Includes auto-scroll for the right-hand thumbnail list using `ref.scrollIntoView({ behavior: 'smooth', block: 'nearest' })`.
+
+2. **Enhance `NotionBlockRenderer.jsx`**:
+   - Collect and pass down image items to enable lightbox triggering on all article images.
+   - Add hover zoom cursor (`cursor-zoom-in`) and click handler to all Notion image blocks.
+   - Support caption display inside the lightbox when captions are present in Notion.
+
+3. **Enhance `ArticleDetail.jsx`**:
+   - Mount `ImageLightboxModal` whenever an image is selected.
+   - Aggregate all images found in the article body + cover image into a cohesive gallery list.
+   - Support optional gallery banner button: *"View All Photos in Gallery ([N])"* for posts containing photo sets.
+
+4. **Testing & Verification**:
+   - Verify keyboard navigation (`←`, `→`, `Esc`, `Space`).
+   - Verify slideshow autoplay starts, cycles continuously, and pauses upon user interaction or toggle.
+   - Verify zoom in/out and panning.
+   - Verify right thumbnail drawer toggle and active thumbnail auto-scroll.
+   - Verify mobile responsiveness on smaller viewports (drawer transitions gracefully to bottom filmstrip or overlay on very small mobile screens).
+
+---
+
+## 4. Verification & Validation Checklist
+
+- [ ] Run `compile_applet` to ensure zero compilation or syntax errors.
+- [ ] Test with sample Notion post containing multiple images.
+- [ ] Verify image counter matches the total number of images (e.g. `1 / N`).
+- [ ] Verify thumbnail drawer synchronizes selection bidirectionally.

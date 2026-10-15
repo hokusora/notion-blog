@@ -651,3 +651,32 @@ html.dark img {
   animation: shake-gentle 0.35s ease-in-out;
 }
 
+/* Lightbox Autoplay Progress Bar Animation */
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+/* Dark scrollbar for Lightbox Thumbnail Drawer */
+.custom-lightbox-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-lightbox-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.custom-lightbox-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+
+.custom-lightbox-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+

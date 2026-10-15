@@ -44,9 +44,229 @@ export const MOCK_CATEGORIES = [
       slug: "content",
     },
   },
+  {
+    sys: { id: "cat-cosplay" },
+    fields: {
+      title: "Cosplay",
+      slug: "cosplay",
+    },
+  },
 ];
 
 export const MOCK_ARTICLES = [
+  {
+    sys: { id: "post-emilia-cosplay", createdAt: "2026-03-15T10:00:00.000Z" },
+    fields: {
+      title: "Emilia - Crystal Dress & Lavender Dream Cosplay Gallery [14 Photos]",
+      slug: "emilia-crystal-dress-cosplay-gallery",
+      excerpt: "Complete photo set featuring Emilia in her signature lavender chiffon gown, silver floral hairpins, and amethyst elven styling.",
+      date: "2026-03-15",
+      tags: ["COSPLAY", "EMILIA", "RE:ZERO", "GALLERY"],
+      coverImage: {
+        fields: {
+          file: {
+            url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1200&auto=format&fit=crop",
+          },
+        },
+      },
+      category: {
+        fields: {
+          title: "Cosplay",
+          slug: "cosplay",
+        },
+      },
+      fontClass: "font-default",
+      textColor: "#8a2be2",
+      blocks: [
+        {
+          id: "blk-intro-1",
+          type: "paragraph",
+          paragraph: {
+            rich_text: [
+              {
+                plain_text:
+                  "Welcome to the official photo gallery for Emilia (Re:Zero − Starting Life in Another World). This shoot features high-resolution studio portraits showcasing the delicate lavender silk robe, crystal floral hairpin, and fairy elf aesthetic.",
+              },
+            ],
+          },
+        },
+        {
+          id: "blk-callout-1",
+          type: "callout",
+          callout: {
+            icon: { type: "emoji", emoji: "✨" },
+            rich_text: [
+              {
+                plain_text:
+                  "Interactive Lightbox Feature: Click on any image below or press 'Open Gallery' above to explore the fullscreen viewer with 3.5s slideshow autoplay, deep zoom/pan, and vertical thumbnail drawer navigation.",
+              },
+            ],
+          },
+        },
+        {
+          id: "blk-heading-1",
+          type: "heading_2",
+          heading_2: {
+            rich_text: [{ plain_text: "Act I: Lavender Chiffon & Silver Filigree" }],
+          },
+        },
+        {
+          id: "blk-img-1",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "01/14: Emilia Lavender Night Gown - Full Stage View" }],
+          },
+        },
+        {
+          id: "blk-img-2",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "02/14: Crystal Hairpin & Silver Elf Ears Close-up" }],
+          },
+        },
+        {
+          id: "blk-img-3",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "03/14: Purple Silk Robe Texture & Embroidery" }],
+          },
+        },
+        {
+          id: "blk-heading-2",
+          type: "heading_2",
+          heading_2: {
+            rich_text: [{ plain_text: "Act II: Ethereal Studio Lighting & Reflections" }],
+          },
+        },
+        {
+          id: "blk-img-4",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "04/14: Soft Evening Studio Lighting & Reflection" }],
+          },
+        },
+        {
+          id: "blk-img-5",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "05/14: Side Profile - Frozen Forest Theme" }],
+          },
+        },
+        {
+          id: "blk-img-6",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "06/14: Sitting Pose on Velvet Cushion" }],
+          },
+        },
+        {
+          id: "blk-img-7",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "07/14: Back Bow & Cascading Ribbon Detail" }],
+          },
+        },
+        {
+          id: "blk-heading-3",
+          type: "heading_2",
+          heading_2: {
+            rich_text: [{ plain_text: "Act III: Morning Dew & Frozen Bonds" }],
+          },
+        },
+        {
+          id: "blk-img-8",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "08/14: Delicate Hands & Morning Dew Gem" }],
+          },
+        },
+        {
+          id: "blk-img-9",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "09/14: Lavender Nightdress Mid-shot" }],
+          },
+        },
+        {
+          id: "blk-img-10",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "10/14: Playful Elf Smile & Amethyst Lenses" }],
+          },
+        },
+        {
+          id: "blk-img-11",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "11/14: Standing Dramatic Spotlight Pose" }],
+          },
+        },
+        {
+          id: "blk-img-12",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "12/14: Intricate Lace Trimming Macro Shot" }],
+          },
+        },
+        {
+          id: "blk-img-13",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "13/14: Ethereal Fairy Wings Effect" }],
+          },
+        },
+        {
+          id: "blk-img-14",
+          type: "image",
+          image: {
+            file: {
+              url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1200&auto=format&fit=crop",
+            },
+            caption: [{ plain_text: "14/14: Final Portrait - Pure Silver Maiden" }],
+          },
+        },
+      ],
+    },
+  },
   {
     sys: { id: "post-1", createdAt: "2026-03-10T09:00:00.000Z" },
     fields: {
