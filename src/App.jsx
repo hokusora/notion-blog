@@ -6,6 +6,7 @@ import CategoryPage from "./pages/CategoryPage";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import LockScreen from "./components/LockScreen";
+import { AudioPlaylistProvider } from "./context/AudioPlaylistContext";
 
 // ============================================================
 // APP — Router + layout shell.
@@ -48,23 +49,25 @@ function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        {/* Home page */}
-        <Route path="/" element={<Home />} />
+    <AudioPlaylistProvider>
+      <Router>
+        <Routes>
+          {/* Home page */}
+          <Route path="/" element={<Home />} />
 
-        {/* Category page: /category/korean, /category/japanese, etc. */}
-        <Route path="/category/:categorySlug" element={<CategoryPage />} />
+          {/* Category page: /category/korean, /category/japanese, etc. */}
+          <Route path="/category/:categorySlug" element={<CategoryPage />} />
 
-        {/* Article detail: support nested sub-paths like /post/parent/child/... */}
-        <Route path="/post/:slug/*" element={<ArticleLayout />} />
-        <Route path="/post/:slug" element={<ArticleLayout />} />
+          {/* Article detail: support nested sub-paths like /post/parent/child/... */}
+          <Route path="/post/:slug/*" element={<ArticleLayout />} />
+          <Route path="/post/:slug" element={<ArticleLayout />} />
 
-        {/* Article detail: support category + nested sub-paths e.g. /:categorySlug/:slug/* */}
-        <Route path="/:categorySlug/:slug/*" element={<ArticleLayout />} />
-        <Route path="/:categorySlug/:slug" element={<ArticleLayout />} />
-      </Routes>
-    </Router>
+          {/* Article detail: support category + nested sub-paths e.g. /:categorySlug/:slug/* */}
+          <Route path="/:categorySlug/:slug/*" element={<ArticleLayout />} />
+          <Route path="/:categorySlug/:slug" element={<ArticleLayout />} />
+        </Routes>
+      </Router>
+    </AudioPlaylistProvider>
   );
 }
 

@@ -7,6 +7,7 @@ import TableOfContents from "../components/TableOfContents";
 import NotionBlockRenderer from "../components/NotionBlockRenderer";
 import SubPageCard from "../components/SubPageCard";
 import ImageLightboxModal from "../components/ImageLightboxModal";
+import AudioPlaylistCard from "../components/AudioPlaylistCard";
 import { slugifyHeading } from "../utils/slugify";
 
 // Helper to extract text from React children tree
@@ -740,9 +741,10 @@ const ArticleDetail = () => {
           {/* Thin rule before body */}
           <div className="border-t border-ink-300/50 mb-10" />
 
-          {/* Mobile / Tablet Collapsible Table of Contents */}
-          <div className="lg:hidden">
+          {/* Mobile / Tablet Collapsible Table of Contents & Playlist */}
+          <div className="lg:hidden space-y-4">
             <TableOfContents content={content} blocks={blocks} variant="mobile" />
+            <AudioPlaylistCard />
           </div>
 
           {/* 
@@ -776,9 +778,10 @@ const ArticleDetail = () => {
           </div>
         </article>
 
-        {/* Desktop Sticky Side Table of Contents */}
-        <aside className="hidden lg:block w-64 xl:w-72 shrink-0 sticky top-24 pt-2">
+        {/* Desktop Sticky Side Table of Contents & Audio Playlist */}
+        <aside className="hidden lg:block w-64 xl:w-72 shrink-0 sticky top-24 pt-2 space-y-4">
           <TableOfContents content={content} blocks={blocks} variant="desktop" />
+          <AudioPlaylistCard />
         </aside>
       </div>
 

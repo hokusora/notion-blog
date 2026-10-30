@@ -19,24 +19,123 @@ import "prismjs/components/prism-go";
 import "prismjs/components/prism-yaml";
 import SubPageCard from "./SubPageCard";
 import { slugifyHeading, slugify } from "../utils/slugify";
+import { useAudioPlaylist } from "../context/useAudioPlaylist";
 
 // Audio file detection regex supporting Notion AWS S3 query parameters
 const AUDIO_REGEX = /\.(mp3|wav|m4a|aac)(\?.*)?$/i;
 
-function AudioPlayerBlock({ audioUrl }) {
+function AudioPlayerBlock({ audioUrl, caption = "", defaultTitle = "" }) {
+  const { addToQueue, getTrackTitle, renameTrack } = useAudioPlaylist();
+  const [justAdded, setJustAdded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editInput, setEditInput] = useState("");
+
+  const title = getTrackTitle(audioUrl, caption || defaultTitle || "Audio Track");
+
+  const handleAdd = () => {
+    addToQueue({ url: audioUrl, title });
+    setJustAdded(true);
+    setTimeout(() => {
+      setJustAdded(false);
+    }, 2500);
+  };
+
+  const handleStartRename = () => {
+    setEditInput(title);
+    setIsEditing(true);
+  };
+
+  const handleSaveRename = () => {
+    if (editInput.trim()) {
+      renameTrack(audioUrl, editInput.trim());
+    }
+    setIsEditing(false);
+  };
+
   return (
-    <div className="my-5 w-full max-w-xl mx-auto p-4 rounded-2xl bg-pink-50/60 border border-pink-200/70 shadow-sm flex flex-col gap-2">
-      <div className="flex items-center gap-2 text-xs font-medium text-pink-700">
-        <span>🎵 Audio Track</span>
+    <div className="my-5 w-full max-w-xl mx-auto p-4 sm:p-5 rounded-2xl bg-current/5 border border-current/20 shadow-xs flex flex-col gap-2.5 text-inherit transition-all">
+      {/* Header with Track Title, Rename, and Circular (+) Add Button */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="text-base select-none shrink-0">🎵</span>
+
+          {isEditing ? (
+            <div className="flex items-center gap-1.5 flex-1">
+              <input
+                type="text"
+                value={editInput}
+                onChange={(e) => setEditInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveRename();
+                  if (e.key === "Escape") setIsEditing(false);
+                }}
+                autoFocus
+                className="w-full text-xs font-semibold px-2 py-1 rounded-lg border border-current bg-transparent text-inherit outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleSaveRename}
+                className="text-xs px-2 py-1 rounded-lg border border-current text-inherit hover:bg-current/10 font-bold"
+              >
+                Save
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 min-w-0 group/rename">
+              <span className="text-xs sm:text-sm font-semibold text-inherit truncate">
+                {title}
+              </span>
+              <button
+                type="button"
+                onClick={handleStartRename}
+                title="Rename track"
+                className="opacity-40 group-hover/rename:opacity-100 hover:scale-110 transition-all text-xs"
+              >
+                ✏️
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Circular (+) Button & Confirmation Badge */}
+        <div className="flex items-center gap-2 shrink-0">
+          {justAdded && (
+            <span className="text-[11px] font-medium font-sans px-2.5 py-0.5 rounded-full border border-current/30 bg-current/10 text-inherit animate-in fade-in zoom-in-95 duration-200">
+              ✓ Added to playlist
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="w-8 h-8 rounded-full border border-current text-inherit bg-current/5 hover:bg-current/15 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-xs shrink-0 cursor-pointer"
+            title="Add to playlist queue"
+          >
+            {justAdded ? (
+              <span className="text-xs font-bold">✓</span>
+            ) : (
+              <span className="text-lg font-light leading-none">+</span>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Audio Element */}
       <audio
         controls
         preload="metadata"
-        className="w-full h-10 accent-pink-500"
+        className="w-full h-10 accent-current"
         src={audioUrl}
       >
         Your browser does not support the audio element.
       </audio>
+
+      {/* Caption if distinct from title */}
+      {caption && caption !== title && (
+        <span className="text-[11px] opacity-70 italic font-sans truncate">
+          {caption}
+        </span>
+      )}
     </div>
   );
 }
@@ -128,7 +227,7 @@ export function NotionRichText({ richText }) {
         if (href) {
           if (AUDIO_REGEX.test(href)) {
             element = (
-              <AudioPlayerBlock key={idx} audioUrl={href} />
+              <AudioPlayerBlock key={idx} audioUrl={href} caption={content} defaultTitle={content} />
             );
           } else {
             element = (
@@ -680,7 +779,14 @@ export default function NotionBlockRenderer({
                 : (AUDIO_REGEX.test(plainText) ? plainText : null);
 
             if (directAudioUrl) {
-              return <AudioPlayerBlock key={blockId} audioUrl={directAudioUrl} />;
+              return (
+                <AudioPlayerBlock
+                  key={blockId}
+                  audioUrl={directAudioUrl}
+                  caption={plainText}
+                  defaultTitle={plainText}
+                />
+              );
             }
 
             return (
@@ -1000,8 +1106,17 @@ export default function NotionBlockRenderer({
           case "audio": {
             const audioData = block.audio;
             const url = audioData?.file?.url || audioData?.external?.url || "";
+            const caption =
+              audioData?.caption?.map((c) => c.plain_text || c.text?.content || "").join("") || "";
             if (!url) return null;
-            return <AudioPlayerBlock key={blockId} audioUrl={url} />;
+            return (
+              <AudioPlayerBlock
+                key={blockId}
+                audioUrl={url}
+                caption={caption}
+                defaultTitle={caption || "Audio Track"}
+              />
+            );
           }
 
           // FILE BLOCK
@@ -1010,8 +1125,15 @@ export default function NotionBlockRenderer({
             const url = fileData?.file?.url || fileData?.external?.url || "";
             const name = fileData?.name || "Download file";
             if (!url) return null;
-            if (AUDIO_REGEX.test(url)) {
-              return <AudioPlayerBlock key={blockId} audioUrl={url} />;
+            if (AUDIO_REGEX.test(url) || AUDIO_REGEX.test(name)) {
+              return (
+                <AudioPlayerBlock
+                  key={blockId}
+                  audioUrl={url}
+                  caption={name}
+                  defaultTitle={name}
+                />
+              );
             }
             return (
               <div key={blockId} className="my-6">

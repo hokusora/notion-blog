@@ -264,6 +264,33 @@ export const MOCK_ARTICLES = [
             caption: [{ plain_text: "14/14: Final Portrait - Pure Silver Maiden" }],
           },
         },
+        {
+          id: "blk-heading-audio",
+          type: "heading_2",
+          heading_2: {
+            rich_text: [{ plain_text: "Background Soundtracks & Ambient Streams" }],
+          },
+        },
+        {
+          id: "blk-audio-1",
+          type: "audio",
+          audio: {
+            file: {
+              url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+            },
+            caption: [{ plain_text: "Re:Zero - Styx Helix (Acoustic Chime Theme)" }],
+          },
+        },
+        {
+          id: "blk-audio-2",
+          type: "audio",
+          audio: {
+            file: {
+              url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+            },
+            caption: [{ plain_text: "Elegy for the Frozen Forest (Crystal Harp & Strings)" }],
+          },
+        },
       ],
     },
   },

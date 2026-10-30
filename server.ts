@@ -5,6 +5,7 @@ import postsHandler from "./api/posts.js";
 import postHandler from "./api/post.js";
 import categoriesHandler from "./api/categories.js";
 import verifyPasscodeHandler from "./api/verify-passcode.js";
+import mediaSizesHandler from "./api/media-sizes.js";
 
 async function startServer() {
   const app = express();
@@ -41,6 +42,11 @@ async function startServer() {
 
   app.get("/api/categories", (req, res) => {
     categoriesHandler(req, res);
+  });
+
+  // Media sizes calculation endpoint (supports GET & POST)
+  app.all("/api/media-sizes", (req, res) => {
+    mediaSizesHandler(req, res);
   });
 
   // Vite middleware for development
